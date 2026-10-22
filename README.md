@@ -4,10 +4,9 @@ Private collection of scripts checked out at `$HOME/bin`.
 
 ```bash
 git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main
-chmod +x "$HOME/bin"/h264BlackFrameExtract "$HOME/bin"/h264BlackFrameExtract-batch
 ```
 
-GitHub stores these as mode `100644`. After a hard reset, run `chmod +x` once if the scripts are not executable.
+Scripts are stored executable (`100755`).
 
 Every commit on `main` is a kept version. To get an older copy:
 
@@ -39,11 +38,7 @@ Creates `<name>_work/` next to the current directory:
 
 The source file is copied into the work directory, not moved.
 
-Review the LQ clips and delete the ones you do not want. The HQ script still encodes every detected segment; edit `<name>_hq.sh` (or delete lines) before running it if you dropped some previews.
-
-```bash
-bash <name>_work/<name>_hq.sh /path/to/original.mp4 ./hq_clips
-```
+Review the LQ clips and delete the ones you do not want. Then run `h264BlackFrameCompile` in that `_work` directory. The generated `<name>_hq.sh` encodes every detected segment, including ones whose previews you deleted. Use Compile instead.
 
 **How cuts are chosen.** `blackdetect` reports black runs. The midpoint of each run is the cut. Clips run from the previous midpoint (or 0) to the next midpoint, then a final clip to the end of the file.
 
@@ -66,3 +61,29 @@ Runs `h264BlackFrameExtract` on every `*.mp4` in the current directory.
 ```bash
 h264BlackFrameExtract-batch
 ```
+
+## h264BlackFrameCompile
+
+Builds one high-quality file from the LQ previews you left in place. A deleted preview is a cut you do not want.
+
+```bash
+cd "/path/Meet Joe Black (1998) 1080p STARZ SRC_work"
+h264BlackFrameCompile
+```
+
+Or pass the work directory:
+
+```bash
+h264BlackFrameCompile "/path/Meet Joe Black (1998) 1080p STARZ SRC_work"
+```
+
+Reads timestamps from each `lq_previews/LQ_ClipNNN_<start>-<stop>.mp4`. Encodes those ranges from the source video sitting in the same folder (`x264` medium, CRF 18, audio copied, one clip at a time, `-threads 0`), then joins them.
+
+Output, next to the source:
+
+```text
+Meet Joe Black (1998) 1080p STARZ SRC.clean.mp4
+```
+
+Only clips still in `lq_previews` are included, in clip-number order. A partial preview still counts; delete it if that segment should be dropped. `CRF` and `PRESET` are at the top of the script.
+
