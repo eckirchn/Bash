@@ -214,10 +214,10 @@ EOF
         cat >> "$hqscript" << EOF
 echo "HQ Clip $clip  $tstart–$tstop"
 ffmpeg -hide_banner -loglevel error \\
-  -ss $prestart -i \"\$INFILE\" -ss $acc -t $length \\
+  -ss $prestart -i "\$INFILE" -ss $acc -t $length \\
   -threads 0 -c:v libx264 -preset medium -crf 18 \\
   -pix_fmt yuv420p -movflags +faststart \\
-  -c:a copy -y \"\$OUTDIR/HQ_Clip${clip}_${tstart}-${tstop}.mp4"
+  -c:a copy -y "\$OUTDIR/HQ_Clip${clip}_${tstart}-${tstop}.mp4"
 EOF
     done < "$cliplog"
 
