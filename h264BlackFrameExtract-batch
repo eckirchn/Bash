@@ -1,0 +1,8 @@
+#!/bin/bash
+# Batch driver for h264BlackFrameExtract
+# Processes every .mp4 in the current directory.
+shopt -s nullglob
+for f in *.mp4; do
+    echo "=== Processing: $f ==="
+    h264BlackFrameExtract "$f"
+done
