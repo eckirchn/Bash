@@ -71,7 +71,7 @@ fnDetectBlackSegments() {
     local pix_th=0.12     # pixel darkness threshold (0–1, scaled to range)
 
     echo -e "${IWhite}Running blackdetect on ${ICyan}$infile${ColorReset}"
-    ffmpeg -hide_banner -loglevel info -i "$infile" \
+    ffmpeg -nostdin -hide_banner -loglevel info -i "$infile" \
         -vf "blackdetect=d=${d}:pic_th=${pic_th}:pix_th=${pix_th}" \
         -an -sn -f null - 2>&1 \
         | grep -E 'black_start|black_end|black_duration' \
@@ -170,7 +170,7 @@ fnGenerateLQClips() {
             prestart=0
             acc=$tstart
         fi
-        ffmpeg -hide_banner -loglevel error \
+        ffmpeg -nostdin -hide_banner -stats -loglevel error \
             -ss "$prestart" -i "$infile" -ss "$acc" -t "$length" \
             -threads 0 -c:v libx264 -preset ultrafast \
             -vf "scale=-2:180" -crf 28 -movflags +faststart \
@@ -213,7 +213,7 @@ EOF
         fi
         cat >> "$hqscript" << EOF
 echo "HQ Clip $clip  $tstart–$tstop"
-ffmpeg -hide_banner -loglevel error \\
+ffmpeg -nostdin -hide_banner -stats -loglevel error \\
   -ss $prestart -i "\$INFILE" -ss $acc -t $length \\
   -threads 0 -c:v libx264 -preset medium -crf 18 \\
   -pix_fmt yuv420p -movflags +faststart \\
