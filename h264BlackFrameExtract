@@ -1,0 +1,899 @@
+#!/bin/bash
+
+function fnDisplayRevision()
+{
+	#  Set Script Revision
+	REV="20200822_2034"
+	echo -e $IWhite"Script Revision:"$IYellow"  "$REV$ColorReset
+	echo -e $IPurple"  Changed Clip Filename Convention"$ColorReset
+	echo
+
+	REV="20190112_2014"
+	echo -e $IWhite"Script Revision:"$IYellow"  "$REV$ColorReset
+	echo -e $IPurple"  Changed to LQ Video Scaling from -1:90 to -1:180 and CRF from 23 to 28"$ColorReset
+	echo
+
+	REV="20190119_1022"
+	echo -e $IWhite"Script Revision:"$IYellow"  "$REV$ColorReset
+	echo -e $IPurple"  Corrected issue when running with deep file paths by copying source file then deleting it."$ColorReset
+	echo
+
+	REV="20190122_2120"
+	echo -e $IWhite"Script Revision:"$IYellow"  "$REV$ColorReset
+	echo -e $IPurple"  Added Move Video check, if fails, copy the video instead."$ColorReset
+	echo
+
+	echo
+	sleep 2
+}
+
+function fnDefineANSIColorCodes ()
+{
+	# Source:  https://gist.github.com/vratiu/9780109
+
+	# Reset
+	ColorReset="\033[0m"	# Text Reset
+
+	# Regular Colors
+	Black="\033[0;30m"		# Black
+	Red="\033[0;31m"		# Red
+	Green="\033[0;32m"		# Green
+	Yellow="\033[0;33m"		# Yellow
+	Blue="\033[0;34m"		# Blue
+	Purple="\033[0;35m"		# Purple
+	Cyan="\033[0;36m"		# Cyan
+	White="\033[0;37m"		# White
+
+	# Bold
+	BBlack="\033[1;30m"		# Black
+	BRed="\033[1;31m"		# Red
+	BGreen="\033[1;32m"		# Green
+	BYellow="\033[1;33m"	# Yellow
+	BBlue="\033[1;34m"		# Blue
+	BPurple="\033[1;35m"	# Purple
+	BCyan="\033[1;36m"		# Cyan
+	BWhite="\033[1;37m"		# White
+
+	# Underline
+	UBlack="\033[4;30m"		# Black
+	URed="\033[4;31m"		# Red
+	UGreen="\033[4;32m"		# Green
+	UYellow="\033[4;33m"	# Yellow
+	UBlue="\033[4;34m"		# Blue
+	UPurple="\033[4;35m"	# Purple
+	UCyan="\033[4;36m"		# Cyan
+	UWhite="\033[4;37m"		# White
+
+	# Background
+	On_Black="\033[40m"		# Black
+	On_Red="\033[41m"		# Red
+	On_Green="\033[42m"		# Green
+	On_Yellow="\033[43m"	# Yellow
+	On_Blue="\033[44m"		# Blue
+	On_Purple="\033[45m"	# Purple
+	On_Cyan="\033[46m"		# Cyan
+	On_White="\033[47m"		# White
+
+	# High Intensty
+	IBlack="\033[0;90m"		# Black
+	IRed="\033[0;91m"		# Red
+	IGreen="\033[0;92m"		# Green
+	IYellow="\033[0;93m"	# Yellow
+	IBlue="\033[0;94m"		# Blue
+	IPurple="\033[0;95m"	# Purple
+	ICyan="\033[0;96m"		# Cyan
+	IWhite="\033[0;97m"		# White
+
+	# Bold High Intensty
+	BIBlack="\033[1;90m"		# Black
+	BIRed="\033[1;91m"			# Red
+	BIGreen="\033[1;92m"		# Green
+	BIYellow="\033[1;93m"		# Yellow
+	BIBlue="\033[1;94m"			# Blue
+	BIPurple="\033[1;95m"		# Purple
+	BICyan="\033[1;96m"			# Cyan
+	BIWhite="\033[1;97m"		# White
+
+	# High Intensty backgrounds
+	On_IBlack="\033[0;100m"		# Black
+	On_IRed="\033[0;101m"		# Red
+	On_IGreen="\033[0;102m"		# Green
+	On_IYellow="\033[0;103m"	# Yellow
+	On_IBlue="\033[0;104m"		# Blue
+	On_IPurple="\033[10;95m"	# Purple
+	On_ICyan="\033[0;106m"		# Cyan
+	On_IWhite="\033[0;107m"		# White
+}
+
+function fnDepCheck ()
+{
+# Check for Dependencies
+	flgDepCheck=0
+
+	echo -e $IWhite"Running Dependency Check"$ColorReset
+
+	# Check for "xterm"
+	if type xterm >/dev/null; then
+	  echo -e "  xterm:"$IGreen"\tOK"$ColorReset
+	else
+		echo -e "  Dependencies Failed:"$IRed"  \"xterm\" not installed"$ColorReset
+		echo -e "  Execute:"$IYellow" dnf install xterm"$ColorReset
+		flgDepCheck=1
+	fi
+
+	# Check for "bc"
+	if type bc >/dev/null; then
+	  echo -e "  bc:"$IGreen"\t\tOK"$ColorReset
+	else
+		echo -e "  Dependencies Failed:"$IRed"  \"bc\" not installed"$ColorReset
+		echo -e "  Execute:"$IGreen" dnf install bc"$ColorReset
+		flgDepCheck=1
+	fi
+
+# Check for "ffmpeg"
+	if type ffmpeg >/dev/null; then
+	  echo -e "  FFmpeg:"$IGreen"\tOK"$ColorReset
+	else
+		echo -e "  Dependencies Failed:"$IRed"  \"ffmpeg\" not installed"$ColorReset
+		echo -e "  Execute:"$IGreen" dnf install ffmpeg"$ColorReset
+		flgDepCheck=1
+	fi
+
+# Check for "ffprobe"
+	if type ffprobe >/dev/null; then
+	  echo -e "  FFprobe:"$IGreen"\tOK"$ColorReset
+	else
+		echo -e "  Dependencies Failed:"$IRed"  \"ffprobe\" not installed"$ColorReset
+		echo -e "  Execute:"$IGreen" dnf install ffmpeg"$ColorReset
+		flgDepCheck=1
+	fi
+
+# Check for "xterm"
+	if type xterm >/dev/null; then
+	  echo -e "  xterm:"$IGreen"\tOK"$ColorReset
+	else
+		echo -e "  Dependencies Failed:"$IRed"  \"xterm\" not installed"$ColorReset
+		echo -e "  Execute:$IGreen dnf install xterm$ColorReset"
+		flgDepCheck=1
+	fi
+
+
+# Exit on Dependencies Fail
+#	echo
+	if [ $flgDepCheck -ne 0 ]; then
+		echo -e $IRed"  Some Dependencies Failed!"$ColorReset
+		echo -e "  See the Text Displayed Above."
+		echo
+		exit
+	fi
+
+ 	echo -e $IWhite"Dependency Check:$IGreen Done"$ColorReset
+ 	echo
+	sleep 2
+}
+
+function fnCPULoad {
+	# by Paul Colby (http://colby.id.au)
+   	PREV_TOTAL=0
+	PREV_IDLE=0
+	TOTAL=0
+
+	# Get the total CPU statistics, discarding the 'cpu ' prefix.
+	CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+	IDLE=${CPU[3]} # Just the idle CPU time.
+
+	# Calculate the total CPU time.
+	TOTAL=0
+	for i in "${CPU[@]}"; do
+	  let "TOTAL=$TOTAL+$i"
+	done
+
+	# Remember the total and idle CPU times for the next check.
+	PREV_TOTAL="$TOTAL"
+	PREV_IDLE="$IDLE"
+
+	sleep 1
+
+	# Get the total CPU statistics, discarding the 'cpu ' prefix.
+	CPU=(`sed -n 's/^cpu\s//p' /proc/stat`)
+	IDLE=${CPU[3]} # Just the idle CPU time.
+
+	# Calculate the total CPU time.
+	TOTAL=0
+	for i in "${CPU[@]}"; do
+	  let "TOTAL=$TOTAL+$i"
+	done
+
+	# Calculate the CPU usage since we last checked.
+	let "DIFF_USAGE=(1000*(($TOTAL-$PREV_TOTAL)-($IDLE-$PREV_IDLE))/($TOTAL-$PREV_TOTAL+5))/10"
+
+	echo $DIFF_USAGE
+	fnCPULoad=$DIFF_USAGE
+}
+
+
+function fnCPUSleep {
+	local _flagHighLoad=1
+	local _limitCPU=90
+	local _tAverage=3
+	local _nSamples=0
+	local _tCPULoad=0
+	local _start=0
+	local _now=0
+	local _avgCPULoad=0
+	local _runtime=0
+	local _preset=""
+	local _vfScale=""
+	local _crf=0
+
+	echo -e $IWhite"  Watching Average CPU Load to drop below "$ICyan$_limitCPU$IWhite"%"
+	_start=`date +%s.%N`
+
+	while [ "$_flagHighLoad" -ne "0" ]; do
+		_nSamples=$((_nSamples+1))
+
+		_CPULoad=$(fnCPULoad)
+		_tCPULoad=$(bc -l <<< "($_tCPULoad + $_CPULoad)")
+		_avgCPULoad=$(bc -l <<< "($_tCPULoad / $_nSamples)")
+
+		echo -ne "\r$IRed    $(printf "%.*f\n" 2 $_avgCPULoad)$ColorReset% - Waiting $IGreen$_tAverage$ColorReset seconds ($IGreen$(printf "%03.0f\n" $_runtime)$ColorReset)"
+
+		_now=`date +%s.%N`
+		_runtime=$(bc -l <<< "($_now - $_start)")
+
+		if (( $(bc -l <<< "$_runtime > $_tAverage" ) )); then
+			echo -ne "\r$IRed    $(printf "%.*f\n" 2 $_avgCPULoad)$ColorReset% - Waiting $IGreen$_tAverage$ColorReset seconds ($IGreen$(printf "%03.0f\n" $_runtime)$ColorReset)"
+			_start=`date +%s`
+			_tCPULoad=0
+			_nSamples=0
+			_flagHighLoad=$(bc -l <<< "$_avgCPULoad > $_limitCPU")
+		fi
+	done
+	echo
+	echo
+}
+
+
+function fnDefineFFmpegLogLevels ()
+{
+	# Define FFmpeg Log levels 
+	# Taken from https://lists.ffmpeg.org/pipermail/ffmpeg-user/2014-November/024158.html
+	# Possible levels are numbers or:
+		# -8	"quiet"
+		# 0		"panic"
+		# 8		"fatal"
+		# 16	"error"
+		# 24	"warning"
+		# 32	"info"
+		# 40	"verbose"
+		# 48	"debug"
+		# "trace"
+
+	AV_LOG_QUIET=-8
+	AV_LOG_PANIC=0
+	AV_LOG_FATAL=8
+	AV_LOG_ERROR=16
+	AV_LOG_WARNING=24
+	AV_LOG_INFO=32
+	AV_LOG_VERBOSE=40
+	AV_LOG_DEBUG=48
+}
+
+
+function fnSetupClipScripts()
+{
+	_oFileGenClipsScript_LQ="$1"
+	_oFileGenClipsScript_HQ="$2"
+
+	if [ -f "$_oFileGenClipsScript_LQ" ]; then
+		rm "$_oFileGenClipsScript_LQ"
+	fi
+
+	if [ -f "$_oFileGenClipsScript_HQ" ]; then
+		rm "$_oFileGenClipsScript_HQ"
+	fi
+
+	# Start of Clip Generation Common Header Content
+	# Setup Generate Clips Script Header
+	local _strUseAWK1=$(echo '{usage=($2+$3+$4)} END {print usage}')
+	local _strTotalAWK1=$(echo '{usage=($2+$3+$4+$5)} END {print usage}')
+
+	local _strUseAWK2=$(echo "awk '$_strUseAWK1'")
+	local _strTotalAWK2=$(echo "awk '$_strTotalAWK1'")
+
+	local _strCmdUse=$(echo "grep \"cpu \" /proc/stat | $_strUseAWK2")
+	local _strCmdTotal=$(echo "grep \"cpu \" /proc/stat | $_strTotalAWK2")
+
+
+	# Setup the common headers for the Clip Generation Scripts
+	echo "#!/bin/bash" >> "$_oFileGenClipsScript_LQ"
+
+	# Write CPUSleep() Function
+	echo 'function CPUSleep()' >> "$_oFileGenClipsScript_LQ"
+	echo '{' >> "$_oFileGenClipsScript_LQ"
+
+	echo '	cpuload=100' >> "$_oFileGenClipsScript_LQ"
+	echo '	echo "  Watching CPU Load to drop below 90%"' >> "$_oFileGenClipsScript_LQ"
+	echo '	while (( $(bc -l <<< "$cpuload > 90") )); do' >> "$_oFileGenClipsScript_LQ"
+
+	echo '	UseSample1=$(\'>> "$_oFileGenClipsScript_LQ"
+	echo "	$_strCmdUse)" >> "$_oFileGenClipsScript_LQ"
+
+	echo '	TotalSample1=$(\'>> "$_oFileGenClipsScript_LQ"
+	echo "	$_strCmdTotal)" >> "$_oFileGenClipsScript_LQ"
+
+	echo '	sleep 2' >> "$_oFileGenClipsScript_LQ"
+
+	echo '	UseSample2=$(\'>> "$_oFileGenClipsScript_LQ"
+	echo "	$_strCmdUse)" >> "$_oFileGenClipsScript_LQ"
+
+	echo '	TotalSample2=$(\'>> "$_oFileGenClipsScript_LQ"
+	echo "	$_strCmdTotal)" >> "$_oFileGenClipsScript_LQ"
+
+	echo '	cpuload=$(echo "($UseSample2-$UseSample1)/($TotalSample2-$TotalSample1)*100" | bc -l)' >> "$_oFileGenClipsScript_LQ"
+	echo '	echo -ne "\e[0K\r""\033[0;91m    $(printf "%.*f\n" 2 $cpuload)%\033[0m"' >> "$_oFileGenClipsScript_LQ"
+	echo '	sleep 2' >> "$_oFileGenClipsScript_LQ"
+	echo '	done' >> "$_oFileGenClipsScript_LQ"
+	echo '}' >> "$_oFileGenClipsScript_LQ"
+	echo "" >> "$_oFileGenClipsScript_LQ"
+
+	#Write File Information for ffmpeg Commands
+	echo 'iFile="$1"' >> "$_oFileGenClipsScript_LQ"
+	echo 'iFname=$(basename "$iFile")' >> "$_oFileGenClipsScript_LQ"
+	echo 'iFbname=${iFname%.*}' >> "$_oFileGenClipsScript_LQ"
+	echo 'oClipDir=$(basename "$iFbname")' >> "$_oFileGenClipsScript_LQ"
+	echo  >> "$_oFileGenClipsScript_LQ"
+	echo 'if [ ! -d "$oClipDir" ]; then' >> "$_oFileGenClipsScript_LQ"
+	echo '  mkdir "$oClipDir"' >> "$_oFileGenClipsScript_LQ"
+	echo 'else' >> "$_oFileGenClipsScript_LQ"
+	echo '  rm -Rfv "$oClipDir\*"' >> "$_oFileGenClipsScript_LQ"
+	echo 'fi' >> "$_oFileGenClipsScript_LQ"
+	echo  >> "$_oFileGenClipsScript_LQ"
+
+	cp "$_oFileGenClipsScript_LQ" "$_oFileGenClipsScript_HQ"
+
+	# End of Clip Generation Common Header Content}
+}
+
+function fnAddWaitForClipsToCompleteScripts()
+{
+	_oFileGenClipsScript_LQ="$1"
+	_oFileGenClipsScript_HQ="$2"
+
+	# Add Waiting for Clips to Complete to Low Quality Script
+	echo -e "" >> "$_oFileGenClipsScript_LQ"
+	echo -e "echo; echo \"Waiting for clips to complete\"" >> "$_oFileGenClipsScript_LQ"
+	echo -e "for job in 'jobs -p'; do" >> "$_oFileGenClipsScript_LQ"
+	echo -e "  wait $job" >> "$_oFileGenClipsScript_LQ"
+	echo -e "  echo \" PID $job Complete\"" >> "$_oFileGenClipsScript_LQ"
+	echo -e "done" >> "$_oFileGenClipsScript_LQ"
+
+	# Add Waiting for Clips to Complete to High Quality Script
+	echo -e "" >> "$_oFileGenClipsScript_HQ"
+	echo -e "echo; echo \"Waiting for clips to complete\"" >> "$_oFileGenClipsScript_HQ"
+	echo -e "for job in 'jobs -p'; do" >> "$_oFileGenClipsScript_HQ"
+	echo -e "  wait $job" >> "$_oFileGenClipsScript_HQ"
+	echo -e "  echo \" PID $job Complete\"" >> "$_oFileGenClipsScript_HQ"
+	echo -e "done" >> "$_oFileGenClipsScript_HQ"
+}
+
+function fnGenerateFFREPORT()
+{
+	local _iFile="$1"
+	local _oFileLogRaw="$2"
+	local _ts=$(date "+%Y%m%d%H%M%S%3N")
+	local _tmpLogFile="FFPROBE-"$_ts".tmp"
+
+	BlackframeAmount=99
+	BlackframeThreshold=32
+
+	echo -e "Starting FFProbe for Frame Details"
+	echo
+	echo
+
+	# Clear any existing log file from Previous Run
+	if [ -f "$_oFileLogRaw" ]; then
+		rm "$_oFileLogRaw" 2>&1
+	fi
+
+	#  Scan Video for Black Frames with ffmpeg.
+	#  Log level of AV_LOG_INFO minimum required to obtain resulting data
+
+	#	-vf blackframe=amount=98:threshold=32
+
+	FFREPORT=file=$_tmpLogFile:level=$AV_LOG_INFO \
+		ffmpeg -hide_banner \
+		-threads 0 \
+		-i "$iFile" \
+		-vf blackframe=amount=$BlackframeAmount:threshold=$BlackframeThreshold \
+		-an \
+		-f null \
+		- 2>&1
+
+	mv -f "$_tmpLogFile" "$_oFileLogRaw"
+}
+
+function fnParseBlackFrameLogFile()
+{
+	local _iLogFile="$1"
+	local _oLogFile="$2"
+
+	local _LastFrame=-1
+	local _nBlackFrames=0
+	local _nClip=0
+
+	local _BlackStart=""
+	local _BlackStartFilled=""
+	local _BlackEnd=""
+	local _BlackFilled=""
+	local _nBlackFramesFilled=""
+	local _nClipFilled=""
+	local _rLine=""
+	local _rLineFrame=""
+	local _FramesSinceLastrLine=""
+
+
+	if [ -f "$_oLogFile" ]; then
+		rm -Rf "$_oLogFile"
+	fi
+
+	echo
+
+	# Loop Through ffmpeg Report Log for Black Frame Information
+	while IFS='' read -r _rLine; do
+		# Extract data from current Black Frame
+		_rLineFrame=$(echo $_rLine |  grep -oP '(?<=frame:).*' | cut -f1 -d ' ')
+
+		if [ "$_rLineFrame" != "" ] ; then
+#			echo "_rLineFrame=\""$_rLineFrame"\""
+
+			# Check to see if the Current Frame is the Start of a Black Segment
+			_FramesSinceLastrLine=$((_rLineFrame-_LastFrame))
+
+#			echo "rLineFrame:"$_rLineFrame", _LastFrame:"$_LastFrame", _nBlackFrames:"$_nBlackFrames
+			if (( $(bc -l <<< "$_FramesSinceLastrLine > 1") )); then
+				if [ "$_LastFrame" != "-1" ]; then
+					_nClip=$((_nClip+1))
+					_nClipFilled=$(printf "%03d\n" $_nClip)
+
+					# Set LastFrame on the first found Black Frame
+					_BlackStart=$((_LastFrame-_nBlackFrames+1))
+					_BlackStartFilled=$(printf "%07d\n" $_BlackStart)
+					_BlackEnd=$_LastFrame
+					_BlackEndFilled=$(printf "%07d\n" $_BlackEnd)
+
+#					echo "rLineFrame:"$_rLineFrame", _LastFrame:"$_LastFrame", _nBlackFrames:"$_nBlackFrames", _BlackStart:"$_BlackStart", _BlackEnd:"$_BlackEnd
+					echo -e $IWhite"Black Section "$ICyan$_nClipFilled\
+						$IWhite"from "$IYellow$_BlackStartFilled$IWhite" to "$IYellow$_BlackEndFilled\
+						$IWhite"("$IBlue$_nBlackFramesFilled$IWhite" Frames)"$ColorReset
+
+					echo "BlackSegment:"$_nClipFilled" BlackStart:"$_BlackStartFilled\
+						" BlackEnd:"$_BlackEndFilled" nFrames:"$_nBlackFramesFilled >> "$_oLogFile"
+
+					_nBlackFrames=0
+#					sleep 5
+				fi
+			fi
+			_LastFrame=$_rLineFrame
+			_nBlackFrames=$((_nBlackFrames+1))
+			_nBlackFramesFilled=$(printf "%03d\n" $_nBlackFrames)
+		fi
+	done < "$_iLogFile"
+
+	_nClip=$((_nClip+1))
+	_nClipFilled=$(printf "%03d\n" $_nClip)
+
+	_BlackStart=$((_LastFrame-_nBlackFrames+1))
+	_BlackStartFilled=$(printf "%07d\n" $_BlackStart)
+	_BlackEnd=$_LastFrame
+	_BlackEndFilled=$(printf "%07d\n" $_BlackEnd)
+
+#	echo -e $IWhite"Black Section "$ICyan$_nClipFilled\
+#		$IWhite"from "$IYellow$_BlackStartFilled$IWhite" to "$IYellow$_BlackEndFilled\
+#		$IWhite"("$IBlue$_nBlackFramesFilled$IWhite" Frames)"$ColorReset
+#	echo -e $IWhite"BlackSegment:"$ICyan$_nClipFilled$IWhite" BlackStart:"$ICyan$_BlackStartFilled$IWhite\
+#		$IWhite" BlackEnd:"ICyan$_BlackEndFilled$IWhite" nFrames:"$ICyan$_nBlackFramesFilled$ColorReset >> "$_oLogFile"
+
+	echo -e $IWhite"Black Section "$ICyan$_nClipFilled\
+		$IWhite"from "$IYellow$_BlackStartFilled$IWhite" to "$IYellow$_BlackEndFilled\
+		$IWhite"("$IBlue$_nBlackFramesFilled$IWhite" Frames)"$ColorReset
+
+	echo "BlackSegment:"$_nClipFilled" BlackStart:"$_BlackStartFilled\
+		" BlackEnd:"$_BlackEndFilled" nFrames:"$_nBlackFramesFilled >> "$_oLogFile"
+
+	echo
+	echo -e $IWhite"Found "$IYellow$_nClipFilled$IWhite" Black Segments"$ColorReset
+	echo
+}
+
+function fnIdentifyClips()
+{
+	local _iFile="$1"
+	local _iLogFile="$2"
+	local _oLogFile="$3"
+
+
+	local _cmd_vFPS=""
+	local _cmd_nFrames=""
+	local _vFPS=0
+	local _vFPS_Float=0.0
+	local _nFrames=0
+	
+	local _nClip=0
+	local _flgFirstLine=1
+
+	local _nClipFilled=""
+	local _rLine=""
+	local _rLineFrame=""
+	local _rLineBlackStart=""
+	local _rLineBlackEnd=""
+	local _rLineFrames=""
+	local _SplitFrame=""
+	local _SplitFrameReal=""
+	local _fClipStart=""
+	local _fClipEnd=""
+	local _tClipStart=""
+	local _tClipEnd=""
+
+
+	if [ -f "$_oLogFile" ]; then
+		rm -Rf "$_oLogFile" 2>&1
+	fi
+
+	# Scan for Framerate and Duration used for calculations
+	_cmd_vFPS="ffprobe -i \"$_iFile\" -select_streams v:0 -show_entries stream=r_frame_rate -v quiet -of csv=\"p=0\""
+	_vFPS=$(eval $_cmd_vFPS)
+	_vFPS_Float=$(bc -l <<< "$_vFPS")
+
+	_cmd_nFrames="ffprobe -i \"$_iFile\" -select_streams v:0 -show_entries stream=nb_frames -v quiet -of csv=\"p=0\""
+	_nFrames=$(eval $_cmd_nFrames)
+
+
+	# Loop Through ffmpeg Report Log for Black Frame Information
+	while IFS='' read -r _rLine; do
+		echo
+		echo -e "Processing Line: [ "$IYellow$_rLine$ColorReset" ]"
+
+		# Extract data from Read Line
+		_rLineBlackStart=$(echo $_rLine |  grep -oP '(?<=BlackStart:).*' | cut -f1 -d ' ')
+		_rLineBlackEnd=$(echo $_rLine |  grep -oP '(?<=BlackEnd:).*' | cut -f1 -d ' ')
+		_rLineFrames=$(echo $_rLine |  grep -oP '(?<=nFrames:).*' | cut -f1 -d ' ')
+
+		if [ $(( $((10#$_rLineFrames)) % 2)) -eq 0 ]; then
+			# Number is Even
+			_SplitFrameReal=$(bc -l <<< "(($_rLineFrames) / 2) + $_rLineBlackStart")
+		else
+			# Number is Odd
+			_SplitFrameReal=$(bc -l <<< "(($_rLineFrames - 1) / 2) + $_rLineBlackStart")
+		fi
+		_SplitFrame=${_SplitFrameReal%.*}
+
+		echo -e $IWhite"  Using Split Frame: "$ICyan$_SplitFrame$ColorReset
+
+		_nClip=$((_nClip+1))
+		_nClipFilled=$(printf "%03d\n" $_nClip)
+
+		if (( $_flgFirstLine )); then
+			_flgFirstLine=0
+
+			_fClipStart=0
+			_tClipStart=$(bc -l <<< "$_fClipStart / $_vFPS_Float")
+			_tClipStart=$(printf "%013.6f\n" $_tClipStart)
+		else
+
+			_fClipStart=$(($_fClipEnd+1))
+			_tClipStart=$(bc -l <<< "$_fClipStart / $_vFPS_Float")
+			_tClipStart=$(printf "%013.6f\n" $_tClipStart)
+		fi
+
+		_fClipEnd=$(($_SplitFrame))
+		_tClipEnd=$(bc -l <<< "$_fClipEnd / $_vFPS_Float")
+		_tClipEnd=$(printf "%013.6f\n" $_tClipEnd)
+
+		echo -e $IWhite"    Clip: "$ICyan$_nClipFilled$IWhite", Frame Start: "$IGreen$_fClipStart$IWhite", Stop: "$IRed$_fClipEnd$ColorReset
+		echo -e $IWhite"    Clip: "$ICyan$_nClipFilled$IWhite", Time Start: "$IGreen$_tClipStart$IWhite", Stop: "$IRed$_tClipEnd$ColorReset
+		echo "Clip:"$_nClipFilled" fStart:"$_fClipStart" fStop:"$_fClipEnd\
+			"tStart:"$_tClipStart" tStop:"$_tClipEnd >> "$_oLogFile"
+
+	done < "$_iLogFile"
+
+	# Add Clip from Last Black Split to End of Video
+	echo
+	echo -e $IWhite"Processing Last Clip:"$ColorReset
+
+	_nClip=$((_nClip+1))
+	_nClipFilled=$(printf "%03d\n" $_nClip)
+
+	_fClipStart=$(($_fClipEnd+1))
+	_tClipStart=$(bc -l <<< "$_fClipStart / $_vFPS_Float")
+	_tClipStart=$(printf "%013.6f\n" $_tClipStart)
+
+	_fClipEnd=$(($_nFrames))
+	_tClipEnd=$(bc -l <<< "$_fClipEnd / $_vFPS_Float")
+	_tClipEnd=$(printf "%013.6f\n" $_tClipEnd)
+
+	echo -e "    Clip:"$ICyan$_nClipFilled$ColorReset", Frame Start:"$IGreen$_fClipStart$ColorReset", Stop:"$IRed$_fClipEnd$ColorReset
+	echo -e "    Clip:"$ICyan$_nClipFilled$ColorReset", Time Start:"$IGreen$_tClipStart$ColorReset", Stop:"$IRed$_tClipEnd$ColorReset
+	echo "Clip:"$_nClipFilled" fStart:"$_fClipStart" fStop:"$_fClipEnd\
+		"tStart:"$_tClipStart" tStop:"$_tClipEnd >> "$_oLogFile"
+
+	echo
+	echo -e "Identified "$IYellow$_nClipFilled$ColorReset" Clips"
+	echo
+}
+
+function fnGenerateClips()
+{
+	local _iLogFile="$1"
+	local _oFileGenClipsScript_LQ="$2"
+	local _oFileGenClipsScript_HQ="$3"
+
+	local _rLine=""
+	local _Clip=""
+	local _tStart=""
+	local _tEnd=""
+	local _tLength=""
+
+	local _oFile=""
+	local _ClipLength=""
+	local _ClipPreScanTime=""
+	local _ClipPreStart=""
+	local _txtStartClip1=""
+	local _txtStartClip2=""
+
+	if [ -f "$_oLogFile" ]; then
+		rm -Rf "$_oLogFile" 2>&1
+	fi
+
+	# Loop Through ffmpeg Report Log for Black Frame Information
+	while IFS='' read -r _rLine; do
+		echo
+		echo -e "Processing Line: [ "$IYellow$_rLine$ColorReset" ]"
+
+		# Extract data from Read Line
+		_Clip=$(echo $_rLine |  grep -oP '(?<=Clip:).*' | cut -f1 -d ' ')
+		_tStart=$(echo $_rLine |  grep -oP '(?<=tStart:).*' | cut -f1 -d ' ')
+		_tStop=$(echo $_rLine |  grep -oP '(?<=tStop:).*' | cut -f1 -d ' ')
+		_ClipLength=$(bc -l <<< "$_tStop - $_tStart")
+		_ClipPreScanTime=10 # Start search 10 seconds early to speed up search but maintain frame accuracy
+
+		if (( $(bc -l <<< "$_tStart >= $_ClipPreScanTime") )); then
+			_ClipPreStart=$(bc -l <<<  "$_tStart - $_ClipPreScanTime")
+		else
+			_ClipPreStart=0
+			_ClipPreScanTime=$_tStart
+		fi
+
+		_ClipLength=$(printf "%013.6f\n" $_ClipLength)
+		_ClipPreStart=$(printf "%013.6f\n" $_ClipPreStart)
+
+		echo -e "  Clip: "$ICyan$_Clip$ColorReset\
+			", Time Start: "$IGreen$_tStart$ColorReset\
+			", Stop: "$IRed$_tStop$ColorReset\
+			", Length: "$IBlue$_ClipLength$ColorReset
+
+		_oFile="Clip"$_Clip" "$_tStart" - "$_tStop" "
+
+		# Add the clip FFmpeg command line to the batch file that will generate the clips (also display it on the screen)
+
+		# NOTE $VAR3 = "$1" literally.  The script is executeed below and the file is sent to the script.
+		# This way the Generate Video Script can be reused for different files.
+		# This could be usefull if this is executed on a low quality version, but once confirmed
+		# the high quality version could be referenced
+
+		VAR3=$(echo '$iFile') # Variable used in Generation Script
+		VAR4=$(echo '$oClipDir') # Variable used in Generation Script
+
+		# Generate the Low Quality Preview Script
+		echo "" >> "$_oFileGenClipsScript_LQ"
+		echo "echo \"\"" >> "$_oFileGenClipsScript_LQ"
+		_txtStartClip1="echo;echo -e \"$IGreen\"\"Starting Clip # $_Clip\"\"$ColorReset\""
+		echo "$_txtStartClip1" >> "$_oFileGenClipsScript_LQ"
+
+		cmdline1=$(echo "ffmpeg -hide_banner -ss $_ClipPreStart -i \"$VAR3\" -ss $_ClipPreScanTime -t $_ClipLength "\
+			"-threads 1 -c:v libx264 -preset ultrafast -vf scale=-1:180 -movflags +faststart -crf 28 "\
+			"-c:a copy -y \"$VAR4/LQ_$_oFile"".mp4\"")
+
+#		echo "echo \"\"" >> "$_oFileGenClipsScript_LQ"
+		echo "echo -e \"  Executing Commandline: \"\"$ICyan\"\"$cmdline1\"\"$ColorReset\"" >> "$_oFileGenClipsScript_LQ"
+		echo "echo \"\"" >> "$_oFileGenClipsScript_LQ"
+
+		echo "xterm -iconic -geometry 120x20+0+40 -e $cmdline1 &" >> "$_oFileGenClipsScript_LQ"
+		echo "sleep 1" >> "$_oFileGenClipsScript_LQ"
+		echo "CPUSleep" >> "$_oFileGenClipsScript_LQ"
+
+		# Generate the High Quality Preview Script
+		echo -e "" >> "$_oFileGenClipsScript_HQ"
+		_txtStartClip2="echo;echo -e \"$IGreen\"\"Starting Clip # $_Clip\"\"$ColorReset\""
+		echo "$_txtStartClip2" >> "$_oFileGenClipsScript_HQ"
+
+		cmdline2=$(echo "ffmpeg -hide_banner -ss $_ClipPreStart -i \"$VAR3\" -ss $_ClipPreScanTime -t $_ClipLength "\
+			"-threads 1 -c:v libx264 -preset veryfast -pix_fmt yuv420p -movflags +faststart -crf 23 "\
+			"-c:a copy -y \"$VAR4/HQ_$_oFile"".mp4\"")
+
+		echo "echo \"\"" >> "$_oFileGenClipsScript_HQ"
+		echo "echo -e \"  Executing Commandline: \"\"$ICyan\"\"$cmdline2\"\"$ColorReset\"" >> "$_oFileGenClipsScript_HQ"
+		echo "echo \"\"" >> "$_oFileGenClipsScript_HQ"
+
+		echo "xterm -iconic -geometry 120x20+0+40 -e $cmdline2 &" >> "$_oFileGenClipsScript_HQ"
+		echo "sleep 1" >> "$_oFileGenClipsScript_HQ"
+		echo "CPUSleep" >> "$_oFileGenClipsScript_HQ"
+
+	done < "$_iLogFile"
+
+}
+
+
+clear
+fnDefineANSIColorCodes
+fnDisplayRevision
+fnDepCheck
+fnDefineFFmpegLogLevels
+
+sflag=0
+tflag=0
+delflag=0
+tSleep=2
+
+iFile="$1"
+
+echo -e
+#echo -e "$IWhite""Checking Commandline Options""$ColorReset"
+
+	if ! [ -f "$iFile" ]; then
+		echo -e
+		echo -e $IRed"Error:"$ColorReset
+		echo -e $IBlue" "$iFile$ColorReset" does not exist!"
+		echo -e 
+		echo -e $IRed"Exiting."$ColorReset
+		echo -e
+		exit
+	fi
+
+	iFname=$(basename "$iFile")
+	iFbname=${iFname%.*}
+	iFext=${iFname##*.}
+	iFdir=$(pwd "$iFile")
+
+	oFileDir="$iFbname"
+	oFileLogRaw="$iFbname""_01_FFREPORT.log"
+	oFileLogBlackSegments="$iFbname""_02_BlackSegments.log"
+	oFileLogClips="$iFbname""_03_Clips.log"
+	oFileGenClipsScript_LQ="$iFbname""_04-lq.sh"
+	oFileGenClipsScript_HQ="$iFbname""_04-hq.sh"
+
+	echo -e $IWhite"Source File Directory:"$ColorReset
+	echo -e $ICyan"  "$iFdir$ColorReset
+	echo
+
+
+	if [ ! -d "$oFileDir" ]; then
+		mkdir "$oFileDir"
+	else
+		echo -e $ICyan$oFileDir$ColorReset" exists!"
+		echo -e "  Using "$ICyan$oFileDir$ColorReset
+	fi
+
+	echo
+	echo -e $IWhite"Moving "$ICyan$iFname$ColorReset$IWhite" to "$ICyan$oFileDir$ColorReset
+	echo 
+	# Move file into working directory
+	mv "$iFname" "$oFileDir"
+	# Check to see if move was successfull
+	if [ $? -eq 0 ]; then
+		echo -e $IGreen"  Sucessfully moved video."$ColorReset
+	else
+		# Attempt to Copy Video rather than move it
+		echo -e
+		echo -e $IRed"  Failed to move video, attempting to copy instead."$ColorReset
+		cp -v "$iFname" "$oFileDir"
+		# Check to see if copy was successfull
+		if [ $? -eq 0 ]; then
+			echo -e $IGreen"  Sucessfully copied video, removing source video."$ColorReset
+			rm -v "$iFname"
+		else
+			echo -e $IRed"  Failed to copy video, exiting."$ColorReset
+			exit
+		fi
+	fi
+
+	echo
+	echo -e $IWhite"Changing into Working Directory: "$ICyan$oFileDir$ColorReset
+	cd "$oFileDir"
+
+#	sleep 3
+
+	# Check to see if the LogFile from FFProbe Exists for this video
+	if [ ! -f "$oFileLogRaw" ]; then
+		# No LogFile Found
+		echo -e
+		echo -e $IWhite"Running FFProbe Function"$ColorReset
+		echo -e
+		fnCPUSleep
+		fnGenerateFFREPORT "../""$iFile" "$oFileLogRaw"
+	else
+		# Existing LogFile Found, Ask how to Proceed.
+		echo -e ""
+		echo -e $IRed"FFProbe Log Exists"$ColorReset"!"
+		echo -ne "  Overwrite? (y/N) " # -ne used so that the [ read -p ] appears on the same line
+		IFS=: read -p "" flgFFProbe
+		if [[ $flgFFProbe == "y" ]]; then
+			echo -e ""
+			echo -e $IWhite"Running FFProbe Function"$ColorReset
+			echo -e
+			fnCPUSleep
+			fnGenerateFFREPORT "../""$iFile" "$oFileLogRaw"
+#			sleep $tSleep
+		fi
+	fi
+
+	# Parse the FFPROBE Results
+	echo -e
+	echo -e $IWhite"Parsing Log File for Black Frames Only"$ColorReset
+	fnParseBlackFrameLogFile "$oFileLogRaw" "$oFileLogBlackSegments"
+#	sleep $tSleep
+
+	# Search Log for Black Segments
+	echo -e
+	echo -e $IWhite"Searching Video for Black Frame Segments"$ColorReset
+	fnIdentifyClips "$iFile" "$oFileLogBlackSegments" "$oFileLogClips"
+#	sleep $tSleep
+
+	# Initialize Clip Scripts
+	echo -e
+	echo -e $IWhite"Initializing Clip Scripts"$ColorReset
+	fnSetupClipScripts "$oFileGenClipsScript_LQ" "$oFileGenClipsScript_HQ"
+#	sleep $tSleep
+
+	# Parse Black Segments into Clips
+	echo -e
+	echo -e $IWhite"Parsing Video into Clips"$ColorReset
+	fnGenerateClips "$oFileLogClips" "$oFileGenClipsScript_LQ" "$oFileGenClipsScript_HQ"
+#	sleep $tSleep
+
+	#	Check to see if a Clip Generation script was created.  If it was, ask the user whether to execute it or not.
+	#	Then proceed to execute the generated script.
+
+
+##	if [ -f "$oFileGenClipsScript_LQ" ]; then
+#		echo -e
+#		echo -e
+#		echo -e "Preparing to run: $ICyan \"bash '$oFileGenClipsScript_LQ' '$iFile'\"$ColorReset"
+		echo -e
+		fnCPUSleep
+#		flgGenerate=""
+#		echo -e
+#		IFS=: read -rp " Generate Low Quality Clips for Preview? (y/N) " flgGenerate
+#		if [[ ${flgGenerate,,} == "y" ]]; then
+#			 Remove any existing mp4 files
+#			rm -fv "$oFileDir/LQ"*.* 2>&1
+#
+#			# Launch Clip Generator Script with referenced Video
+			time eval bash \"$oFileGenClipsScript_LQ\" \"$iFname\"
+#		fi
+#	fi
+#
+#	if [ -f "$oFileGenClipsScript_HQ" ]; then
+#		echo -e
+#		echo -e
+#		echo -e "Preparing to run: $ICyan bash \"$oFileGenClipsScript_HQ\" \"$iFile\"$ColorReset"
+#		echo -e
+#		flgGenerate=""
+#		IFS=: read -rp " Generate High Quality Clips? (y/N) " flgGenerate
+#		echo -e
+#		if [[ ${flgGenerate,,} == "y" ]]; then
+#			 Remove any existing mp4 files
+#			rm -fv "$oFileDir/HQ"*.* 2>&1
+#
+#			# Launch Clip Generator Script with referenced Video
+#			time eval bash \"$oFileGenClipsScript_HQ\" \"$iFile\"
+#		fi
+#	fi
+
+
+	# Display Commandline Summary
+	echo -e
+	echo -e $IWhite"Execute : [ "$IGreen" bash \""$oFileGenClipsScript_LQ"\" \""$iFname"\""$ColorReset" ] to generate the Low Quality (mpg) Clips."
+	echo -e $IWhite"Execute : [ "$IGreen" bash \""$oFileGenClipsScript_HQ"\" \""$iFname"\""$ColorReset" ] to generate the High Quality (mp4) Clips."
+	echo
+	echo
