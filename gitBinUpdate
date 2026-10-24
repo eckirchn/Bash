@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-# Updated: 24 October 2026, 3:17 AM MDT
-# gitBinUpdate — put the Bash repo into $HOME/bin without deleting local scripts.
+# Updated: 24 October 2026, 6:22 AM MDT
+# gitBinUpdate — refresh repo files in an existing $HOME/bin checkout.
 #
 # Overwrites files that are in the repo. Leaves every other file in the
 # directory alone. Does not git clean, and does not reset --hard.
 # Does not read or write SSH keys or SSH config.
-# A checkout that already has an origin keeps that URL. SSH stays SSH.
-# A new checkout uses HTTPS, so a key meant for something else is not offered.
-# If $HOME/bin is not a checkout yet, this creates one.
-# gitBinCreate is the same job, for the first run.
+# Does not create a checkout and does not choose a remote.
+# The origin URL already on the checkout is kept. SSH stays SSH.
 
 set -euo pipefail
 
@@ -20,8 +18,7 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261024_0317"
-DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
+REV="20261024_0622"
 DEFAULT_BRANCH="main"
 
 die() {
@@ -31,7 +28,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  Keeps the origin already set. A new checkout uses HTTPS. Does not touch SSH keys.${ColorReset}"
+    echo -e "${IPurple}  Updates an existing checkout. Does not create one. Does not touch SSH keys.${ColorReset}"
     echo
 }
 
@@ -41,17 +38,32 @@ Usage: gitBinUpdate [directory]
 
   directory    Where the scripts live. Default: $HOME/bin
 
-If that directory is not a git checkout yet, this creates one and then
-writes the repo files. Files already there that are not in the repo are
-not removed. Files that are in the repo are replaced.
+The directory must already be a checkout of this repository.
+This script does not clone, and it does not create a checkout.
+Files already there that are not in the repo are not removed.
+Files that are in the repo are replaced.
 Does not change SSH keys, SSH config, or git settings outside that directory.
-An existing origin URL is kept. A new checkout uses HTTPS.
-If the directory is already a checkout of a different remote, it stops.
+The origin URL already set is kept.
 
-  GIT_BIN_REMOTE   Default: https://github.com/eckirchn/Bash.git
   GIT_BIN_BRANCH   Default: main
+  GIT_BIN_REMOTE   Optional. If set, the existing origin must be this URL.
+                   If unset, the origin already on the checkout is used.
 
-Examples:
+Install into $HOME/bin the first time (empty directory):
+
+  git clone '<repository-url>' "$HOME/bin"
+
+Install when $HOME/bin already has local scripts:
+
+  cd "$HOME/bin"
+  git init -b main
+  git remote add origin '<repository-url>'
+  git fetch origin main
+  git checkout -f origin/main -- .
+  git reset --mixed origin/main
+
+Then:
+
   gitBinUpdate
   gitBinUpdate "$HOME/bin"
 EOF
@@ -115,7 +127,9 @@ fnSameRepo() {
 fnResolveDir() {
     local requested=$1
     local resolved home_resolved
-    mkdir -p "$requested"
+    if [[ ! -d "$requested" ]]; then
+        die "${requested} does not exist. Clone the repository there first. This script does not create a checkout."
+    fi
     resolved=$(cd "$requested" && pwd -P)
     home_resolved=$(cd "$HOME" && pwd -P)
     if [[ "$resolved" == "/" || "$resolved" == "$home_resolved" ]]; then
@@ -124,29 +138,24 @@ fnResolveDir() {
     printf '%s\n' "$resolved"
 }
 
-fnEnsureCheckout() {
-    local bin=$1 url=$2 branch=$3
+fnRequireCheckout() {
+    local bin=$1 expected=$2
     local current
     if [[ -f "${bin}/.git" ]]; then
         die "${bin}/.git is a file, not a checkout. Not touching it."
     fi
     if [[ ! -d "${bin}/.git" ]]; then
-        git -C "$bin" -c init.defaultBranch="${branch}" init >/dev/null 2>&1
-        git -C "$bin" symbolic-ref HEAD "refs/heads/${branch}"
-        git -C "$bin" remote add origin "$url"
-        created=1
-        return 0
+        die "${bin} is not a git checkout. Clone the repository there first. This script does not create a checkout."
     fi
     if ! git -C "$bin" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         die "${bin} has a .git directory this git does not understand. Not touching it."
     fi
     current=$(git -C "$bin" remote get-url origin 2>/dev/null || true)
     if [[ -z "$current" ]]; then
-        git -C "$bin" remote add origin "$url"
-        return 0
+        die "${bin} has no origin. Add one, then run this again: git -C \"${bin}\" remote add origin '<repository-url>'"
     fi
-    if ! fnSameRepo "$current" "$url"; then
-        die "${bin} already tracks ${current}. Refusing to switch it to ${url}."
+    if [[ -n "$expected" ]] && ! fnSameRepo "$current" "$expected"; then
+        die "${bin} already tracks ${current}. Refusing to switch it to ${expected}."
     fi
 }
 
@@ -194,7 +203,6 @@ fnShowLocalFiles() {
     fi
 }
 
-from_create=0
 bin_arg=""
 
 while [[ $# -gt 0 ]]; do
@@ -202,10 +210,6 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             usage
             exit 0
-            ;;
-        --from-create)
-            from_create=1
-            shift
             ;;
         -d|--dir)
             [[ $# -ge 2 ]] || die "Missing value for $1"
@@ -237,8 +241,8 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-url=${GIT_BIN_REMOTE:-$DEFAULT_REMOTE}
 branch=${GIT_BIN_BRANCH:-$DEFAULT_BRANCH}
+expected=${GIT_BIN_REMOTE:-}
 
 fnDisplayRevision
 
@@ -253,16 +257,11 @@ if [[ -z "$bin_arg" ]]; then
 fi
 bin=$(fnResolveDir "$bin_arg")
 
-was_repo=0
-if [[ -d "${bin}/.git" ]]; then
-    was_repo=1
-fi
-created=0
-fnEnsureCheckout "$bin" "$url" "$branch"
+fnRequireCheckout "$bin" "$expected"
 git -C "$bin" config core.autocrlf false
 
-echo -e "${IWhite}Fetching ${ICyan}$(git -C "$bin" remote get-url origin)${IWhite} (${branch})${ColorReset}"
 origin_now=$(git -C "$bin" remote get-url origin)
+echo -e "${IWhite}Fetching ${ICyan}${origin_now}${IWhite} (${branch})${ColorReset}"
 if ! fnGitFetch "$bin" "$branch"; then
     echo -e "${IRed}Could not fetch.${ColorReset}" >&2
     if [[ "$origin_now" == https://* ]]; then
@@ -289,15 +288,7 @@ echo -e "${IWhite}Writing ${ICyan}${count}${IWhite} repo ${noun} into ${ICyan}${
 echo -e "${IWhite}Files that are not in the repo are not deleted.${ColorReset}"
 fnWriteRepoFiles "$bin" "$branch"
 
-if [[ "$from_create" -eq 1 && "$created" -eq 1 ]]; then
-    echo -e "${IGreen}Created the checkout and wrote the repo files.${ColorReset}"
-elif [[ "$from_create" -eq 1 ]]; then
-    echo -e "${IGreen}Checkout was already there. Repo files were updated.${ColorReset}"
-elif [[ "$was_repo" -eq 0 ]]; then
-    echo -e "${IGreen}No checkout yet. Created one and wrote the repo files.${ColorReset}"
-else
-    echo -e "${IGreen}Updated the repo files.${ColorReset}"
-fi
+echo -e "${IGreen}Updated the repo files.${ColorReset}"
 echo
 fnShowLocalFiles "$bin"
 echo

@@ -1,40 +1,58 @@
 # Bash scripts
 
-Updated: 24 October 2026, 4:22 AM MDT
+Updated: 24 October 2026, 6:22 AM MDT
 
-Scripts for the Xeon. The repository is [eckirchn/Bash](https://github.com/eckirchn/Bash). It is public. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
+Scripts for the Xeon. This repository is public. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Latest usage
 
-### Put the repo in `$HOME/bin`
+### Install into `$HOME/bin`
 
-`$HOME/bin` is often just a directory of scripts. It is not a git checkout until this is run, and `git fetch` there fails.
+No helper script. Use git. No login is required. These commands do not change `~/.ssh`.
 
-First time, from a temp clone:
+Empty directory:
 
 ```bash
-git clone https://github.com/eckirchn/Bash.git /tmp/Bash
-/tmp/Bash/gitBinCreate
+git clone '<repository-url>' "$HOME/bin"
 ```
 
-No login is required. It does not change `~/.ssh`. After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH.
+`$HOME/bin` already has local scripts. Those files stay. Files that are in the repository are replaced.
+
+```bash
+cd "$HOME/bin"
+git init -b main
+git remote add origin '<repository-url>'
+git fetch origin main
+git checkout -f origin/main -- .
+git reset --mixed origin/main
+```
+
+`<repository-url>` is the clone URL for this repository. Put `$HOME/bin` on `PATH` if it is not already:
+
+```bash
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Later updates
+
+After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH. It does not create a checkout.
 
 ```bash
 gitBinUpdate
 ```
 
-Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinCreate.md](docs/gitBinCreate.md), [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
+Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
 ### SSH key for one server
 
-`sshkeygen` is in this repository. The same script is also at `https://github.com/eckirchn/sshkeygen`.
+`sshkeygen` is in this repository. After the install above:
 
 ```bash
-git clone https://github.com/eckirchn/sshkeygen.git
 sshkeygen myserver
 ```
 
-From Windows PowerShell, in that clone: `.\sshkeygen.ps1 myserver`. Details: [docs/sshkeygen.md](docs/sshkeygen.md).
+From Windows PowerShell, in a checkout of this repository: `.\sshkeygen.ps1 myserver`. Details: [docs/sshkeygen.md](docs/sshkeygen.md).
 
 ### Black frames
 
@@ -60,7 +78,6 @@ The batch script does not compile.
 
 | Script | Doc | Result |
 |---|---|---|
-| `gitBinCreate` | [docs/gitBinCreate.md](docs/gitBinCreate.md) | First checkout in `$HOME/bin` |
 | `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
 | `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
 | `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |

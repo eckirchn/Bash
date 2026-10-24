@@ -1,8 +1,8 @@
 # sshkeygen
 
-Updated: 24 October 2026, 4:22 AM MDT
+Updated: 24 October 2026, 6:22 AM MDT
 
-This script lives in `eckirchn/Bash`. The same files are also at `https://github.com/eckirchn/sshkeygen`.
+This script lives in this repository, in the checkout at `$HOME/bin`.
 
 Makes one SSH key for one server, writes a `Host` block at the top of `~/.ssh/config`, and tries to install the public key.
 

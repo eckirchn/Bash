@@ -142,7 +142,7 @@ if [ -f $keypath/$keyname ]; then
 	echo -e $IRed"Key Exists.  "$IYellow"Using existing key"$ColorReset
 	echo -e
 else
-	yes n|ssh-keygen -t rsa -b 4096 -C "eckirchn@$HOSTNAME" -N "" -f "$keypath/$keyname"
+	yes n|ssh-keygen -t rsa -b 4096 -C "$USER@$HOSTNAME" -N "" -f "$keypath/$keyname"
 	echo -e $ICyan"n"$ColorReset # for visual effect
 	echo -e 
 

@@ -2,35 +2,39 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 6:22 AM MDT
+
+Removed `gitBinCreate` and `docs/gitBinCreate.md`. The first install into `$HOME/bin` is git commands in the README, not a script. An empty directory is `git clone '<repository-url>' "$HOME/bin"`. A directory that already has local scripts is `git init`, `remote add origin`, `fetch`, and `checkout` of the tracked paths, so those local scripts stay. Nothing in those commands names a GitHub login.
+
+`gitBinUpdate` stays. It only refreshes a directory that is already a checkout. It does not create a checkout, it does not choose a remote, and it no longer accepts `--from-create`. The origin already set is fetched as it is. SSH stays SSH. HTTPS stays HTTPS and is still pinned so a global rewrite cannot turn it into SSH. `GIT_BIN_REMOTE` is optional. Set it only to refuse a different origin. `~/.ssh` is still not read or written. Local-only files are still left in place. `git clean` and `git reset --hard` are still not used.
+
+The tree no longer contains the GitHub login. The README, `docs/gitBinUpdate.md`, and `docs/sshkeygen.md` say this repository and `<repository-url>`. The archived 2019 script `archive/sshkeygen-20190126` used a fixed login in the key comment. That comment is now `$USER@$HOSTNAME`. The archive is still not the script to run. `sshkeygen.ps1` was already in the tree. It was not added in this revision.
+
 ## 24 October 2026, 4:22 AM MDT
 
-`eckirchn/Bash` is public. Anyone can clone it with no account and no SSH key:
-
-```bash
-git clone https://github.com/eckirchn/Bash.git
-```
+This repository is public. Anyone can clone it with no account and no SSH key.
 
 The PDF folder was removed from the current tree before the repository was made public. Older commits still contain that folder. `gitBinCreate` and `gitBinUpdate` no longer ask for a token.
 
 ## 24 October 2026, 4:19 AM MDT
 
-`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` are back in this repository. Removing them was wrong. They stay in `eckirchn/Bash`. A private repository cannot mark one file public, so the only public copy is `https://github.com/eckirchn/sshkeygen`. No other script from Bash is published there. `eckirchn/bin` was not changed.
+`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` are back in this repository. Removing them was wrong. They stay in this repository. A private repository cannot mark one file public, so the only public copy was the standalone sshkeygen repository. No other script from Bash is published there. The public bin snapshot was not changed.
 
 ## 24 October 2026, 4:16 AM MDT
 
-`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` were removed from this private repository and published at `https://github.com/eckirchn/sshkeygen`. No account is required to clone that repository. A later `git reset --hard` on the Xeon removes the old copies from `$HOME/bin` because they were tracked here. `eckirchn/bin` was not changed.
+`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` were removed from this private repository and published in the standalone public sshkeygen repository. No account is required to clone that repository. A later `git reset --hard` on the Xeon removes the old copies from `$HOME/bin` because they were tracked here. The public bin snapshot was not changed.
 
 ## 24 October 2026, 4:14 AM MDT
 
-The working repository is `eckirchn/Bash`. Further changes are committed there. `eckirchn/bin` is left as the public snapshot from 3:32 AM and is not updated unless that is requested. The Xeon checkout command is unchanged: `git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main`.
+Further changes are committed in this repository. The public bin snapshot is left as the public snapshot from 3:32 AM and is not updated unless that is requested. The Xeon checkout command is unchanged: `git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main`.
 
 ## 24 October 2026, 3:32 AM MDT
 
-The whole bin directory is public at `https://github.com/eckirchn/bin`. No account is required to clone it. That copy includes the scripts and the docs. It does not include the PDF folder, and it does not name that folder. `gitBinCreate` and `gitBinUpdate` in the public copy fetch `https://github.com/eckirchn/bin.git`. This private checkout is unchanged and still uses its existing origin.
+The whole bin directory was published as a public snapshot. No account is required to clone it. That copy includes the scripts and the docs. It does not include the PDF folder, and it does not name that folder. `gitBinCreate` and `gitBinUpdate` in the public copy fetch that snapshot. This private checkout is unchanged and still uses its existing origin.
 
 ## 24 October 2026, 3:24 AM MDT
 
-Only one machine needs the private beta. `sshkeygen` and `sshkeygen.ps1` are published at `https://github.com/eckirchn/sshkeygen`, which is public. Another machine clones that URL over HTTPS with no account and no SSH key. The black-frame scripts and `gitBinCreate` / `gitBinUpdate` stay in this private repo.
+Only one machine needs the private beta. `sshkeygen` and `sshkeygen.ps1` are published in the standalone public sshkeygen repository. Another machine clones that URL over HTTPS with no account and no SSH key. The black-frame scripts and `gitBinCreate` / `gitBinUpdate` stay in this private repo.
 
 ## 24 October 2026, 3:19 AM MDT
 
@@ -40,19 +44,19 @@ The BirdNet failure `Permission denied (publickey)` happens before GitHub looks 
 
 ## 24 October 2026, 3:17 AM MDT
 
-`gitBinUpdate` on the Xeon failed after `adf6a34`. That checkout's origin was still `git@github.com:eckirchn/Bash.git`, and a plain `git fetch` over SSH succeeded. The script then set `GIT_SSH_COMMAND` to refuse SSH because its default URL is HTTPS, so the fetch died with `Refusing SSH` and `Could not fetch`.
+`gitBinUpdate` on the Xeon failed after `adf6a34`. That checkout's origin was still this repository over SSH, and a plain `git fetch` over SSH succeeded. The script then set `GIT_SSH_COMMAND` to refuse SSH because its default URL is HTTPS, so the fetch died with `Refusing SSH` and `Could not fetch`.
 
 The script no longer does that. An origin that is already this repo is fetched as it is. SSH stays SSH. HTTPS stays HTTPS, still pinned so a global rewrite cannot turn it into SSH. A brand-new checkout still uses HTTPS, so a machine whose GitHub key is for something else is not offered that key. `~/.ssh` is still not read or written.
 
 ## 24 October 2026, 3:14 AM MDT
 
-`gitBinCreate` and `gitBinUpdate` no longer default to `git@github.com`. On BirdNet, an SSH clone was refused with `Permission denied (publickey)`. That Pi may already have a GitHub key from the BirdNET-Pi install. These scripts do not call `ssh-keygen`, do not write `~/.ssh`, and do not add a `Host github.com` block. The default URL is `https://github.com/eckirchn/Bash.git`. An https URL is pinned so a global rewrite to SSH does not catch it, and an https fetch will not run `ssh`. A private fetch asks for the GitHub login and a personal access token. Local-only files in `bin` are still left in place. A directory that already tracks a different remote is still refused.
+`gitBinCreate` and `gitBinUpdate` no longer default to `git@github.com`. On BirdNet, an SSH clone was refused with `Permission denied (publickey)`. That Pi may already have a GitHub key from the BirdNET-Pi install. These scripts do not call `ssh-keygen`, do not write `~/.ssh`, and do not add a `Host github.com` block. The default URL is this repository over HTTPS. An https URL is pinned so a global rewrite to SSH does not catch it, and an https fetch will not run `ssh`. A private fetch asks for the GitHub login and a personal access token. Local-only files in `bin` are still left in place. A directory that already tracks a different remote is still refused.
 
 ## 24 October 2026, 2:55 AM MDT
 
 `gitBinCreate` and `gitBinUpdate`. On the BirdNet Pi, `git -C "$HOME/bin" fetch` failed because `$HOME/bin` is a directory of scripts, not a checkout (`fatal: not a git repository`).
 
-`gitBinCreate` is the first run. Clone the repo to a temp directory, then run `/tmp/Bash/gitBinCreate`. It turns `$HOME/bin` into a checkout of `git@github.com:eckirchn/Bash.git`. `gitBinUpdate` does that same create when `.git` is missing, and on later runs it only refreshes files. Both refuse a directory that already tracks a different remote.
+`gitBinCreate` is the first run. Clone the repo to a temp directory, then run `/tmp/Bash/gitBinCreate`. It turns `$HOME/bin` into a checkout of this repository over SSH. `gitBinUpdate` does that same create when `.git` is missing, and on later runs it only refreshes files. Both refuse a directory that already tracks a different remote.
 
 Neither script deletes files. A name that is in the repo is overwritten, including a local edit to that name. A script that exists only in `bin` is left alone, not added, and not pushed. `git clean` and `git reset --hard` are not used. A file dropped from the repo on GitHub stays on disk and becomes untracked. Docs: `docs/gitBinCreate.md`, `docs/gitBinUpdate.md`. The README no longer tells you to `reset --hard`.
 
