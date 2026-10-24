@@ -1,16 +1,29 @@
 # Bash scripts
 
-Updated: 24 October 2026, 2:36 AM MDT
+Updated: 24 October 2026, 2:55 AM MDT
 
-Private scripts. SSH key setup, then the black-frame cut workflow. Checked out at `$HOME/bin`. Sync with:
-
-```bash
-git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main
-```
-
-Scripts are stored executable. History is in [CHANGELOG.md](CHANGELOG.md).
+Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Latest usage
+
+### Put the repo in `$HOME/bin`
+
+`$HOME/bin` is often just a directory of scripts. It is not a git checkout until this is run, and `git fetch` there fails.
+
+First time, from a temp clone:
+
+```bash
+git clone git@github.com:eckirchn/Bash.git /tmp/Bash
+/tmp/Bash/gitBinCreate
+```
+
+After that:
+
+```bash
+gitBinUpdate
+```
+
+Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinCreate.md](docs/gitBinCreate.md), [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
 ### SSH key for one server
 
@@ -52,6 +65,8 @@ The batch script does not compile.
 
 | Script | Doc | Result |
 |---|---|---|
+| `gitBinCreate` | [docs/gitBinCreate.md](docs/gitBinCreate.md) | First checkout in `$HOME/bin` |
+| `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
 | `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
 | `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
 | `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |

@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+# Updated: 24 October 2026, 2:55 AM MDT
+# gitBinUpdate — put the Bash repo into $HOME/bin without deleting local scripts.
+#
+# Overwrites files that are in the repo. Leaves every other file in the
+# directory alone. Does not git clean, and does not reset --hard.
+# If $HOME/bin is not a checkout yet, this creates one.
+# gitBinCreate is the same job, for the first run.
+
+set -euo pipefail
+
+ColorReset='\033[0m'
+IWhite='\033[0;97m'
+IYellow='\033[0;93m'
+ICyan='\033[0;96m'
+IGreen='\033[0;92m'
+IRed='\033[0;91m'
+IPurple='\033[0;95m'
+
+REV="20261024_0255"
+DEFAULT_REMOTE="git@github.com:eckirchn/Bash.git"
+DEFAULT_BRANCH="main"
+
+die() {
+    echo -e "${IRed}$*${ColorReset}" >&2
+    exit 1
+}
+
+fnDisplayRevision() {
+    echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
+    echo -e "${IPurple}  Update repo files in \$HOME/bin. Local-only scripts are left in place.${ColorReset}"
+    echo
+}
+
+usage() {
+    cat <<'EOF'
+Usage: gitBinUpdate [directory]
+
+  directory    Where the scripts live. Default: $HOME/bin
+
+If that directory is not a git checkout yet, this creates one and then
+writes the repo files. Files already there that are not in the repo are
+not removed. Files that are in the repo are replaced.
+
+  GIT_BIN_REMOTE   Default: git@github.com:eckirchn/Bash.git
+  GIT_BIN_BRANCH   Default: main
+
+Examples:
+  gitBinUpdate
+  GIT_BIN_REMOTE=https://github.com/eckirchn/Bash.git gitBinUpdate
+  gitBinUpdate "$HOME/bin"
+EOF
+}
+
+fnClientFamily() {
+    local id
+    if [[ -r /etc/os-release ]]; then
+        id=$(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2; exit }' /etc/os-release)
+        case "$id" in
+            fedora|rhel|centos|almalinux|rocky) echo fedora; return ;;
+            ubuntu) echo ubuntu; return ;;
+            raspbian) echo raspberrypi; return ;;
+            debian)
+                if [[ -f /etc/rpi-issue ]]; then
+                    echo raspberrypi
+                    return
+                fi
+                if [[ -f /proc/device-tree/model ]] && grep -qi raspberry /proc/device-tree/model 2>/dev/null; then
+                    echo raspberrypi
+                    return
+                fi
+                echo debian
+                return
+                ;;
+        esac
+    fi
+    echo linux
+}
+
+fnInstallHint() {
+    case "$(fnClientFamily)" in
+        fedora) echo "sudo dnf install git" ;;
+        ubuntu|debian|raspberrypi) echo "sudo apt update && sudo apt install git" ;;
+        *) echo "Install git. Fedora: sudo dnf install git. Ubuntu, Debian, Raspberry Pi OS: sudo apt install git." ;;
+    esac
+}
+
+fnSlug() {
+    local url=$1
+    url=${url%.git}
+    url=${url%/}
+    if [[ "$url" =~ ^[A-Za-z0-9._+-]+@[^:]+:(.+)$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return
+    fi
+    if [[ "$url" =~ ^[A-Za-z][A-Za-z0-9+.-]*://([^/]*)/(.+)$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[2]}"
+        return
+    fi
+    printf '%s\n' "$url"
+}
+
+fnSameRepo() {
+    local a b
+    a=$(fnSlug "$1" | tr '[:upper:]' '[:lower:]')
+    b=$(fnSlug "$2" | tr '[:upper:]' '[:lower:]')
+    [[ "$a" == "$b" ]]
+}
+
+fnResolveDir() {
+    local requested=$1
+    local resolved home_resolved
+    mkdir -p "$requested"
+    resolved=$(cd "$requested" && pwd -P)
+    home_resolved=$(cd "$HOME" && pwd -P)
+    if [[ "$resolved" == "/" || "$resolved" == "$home_resolved" ]]; then
+        die "Refusing to use ${resolved}. Use a directory such as \$HOME/bin."
+    fi
+    printf '%s\n' "$resolved"
+}
+
+fnEnsureCheckout() {
+    local bin=$1 url=$2 branch=$3
+    local current
+    if [[ -f "${bin}/.git" ]]; then
+        die "${bin}/.git is a file, not a checkout. Not touching it."
+    fi
+    if [[ ! -d "${bin}/.git" ]]; then
+        git -C "$bin" -c init.defaultBranch="${branch}" init >/dev/null 2>&1
+        git -C "$bin" symbolic-ref HEAD "refs/heads/${branch}"
+        git -C "$bin" remote add origin "$url"
+        created=1
+        return 0
+    fi
+    if ! git -C "$bin" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        die "${bin} has a .git directory this git does not understand. Not touching it."
+    fi
+    current=$(git -C "$bin" remote get-url origin 2>/dev/null || true)
+    if [[ -z "$current" ]]; then
+        git -C "$bin" remote add origin "$url"
+        return 0
+    fi
+    if ! fnSameRepo "$current" "$url"; then
+        die "${bin} already tracks ${current}. Refusing to switch it to ${url}."
+    fi
+}
+
+fnWriteRepoFiles() {
+    local bin=$1 branch=$2
+    local path list
+    list=$(mktemp)
+    git -C "$bin" ls-tree -r -z --name-only "origin/${branch}" >"$list"
+    while IFS= read -r -d '' path; do
+        git -C "$bin" checkout -f "origin/${branch}" -- "$path"
+    done <"$list"
+    rm -f "$list"
+    git -C "$bin" symbolic-ref HEAD "refs/heads/${branch}"
+    git -C "$bin" reset --mixed "origin/${branch}" >/dev/null
+}
+
+fnShowLocalFiles() {
+    local bin=$1
+    local line path shown=0 status
+    status=$(mktemp)
+    git -C "$bin" status --porcelain=v1 --untracked-files=all >"$status"
+    while IFS= read -r line; do
+        [[ "$line" == \?\?* ]] || continue
+        path=${line#?? }
+        if [[ "$shown" -eq 0 ]]; then
+            echo -e "${IWhite}Left in place, not in the repo:${ColorReset}"
+            shown=1
+        fi
+        echo -e "${ICyan}  ${path}${ColorReset}"
+    done <"$status"
+    rm -f "$status"
+    if [[ "$shown" -eq 0 ]]; then
+        echo -e "${IWhite}No extra local files.${ColorReset}"
+    fi
+}
+
+from_create=0
+bin_arg=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --from-create)
+            from_create=1
+            shift
+            ;;
+        -d|--dir)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            bin_arg=$2
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            die "Unknown option: $1"
+            ;;
+        *)
+            if [[ -n "$bin_arg" ]]; then
+                die "Too many arguments: $1"
+            fi
+            bin_arg=$1
+            shift
+            ;;
+    esac
+done
+
+while [[ $# -gt 0 ]]; do
+    if [[ -n "$bin_arg" ]]; then
+        die "Too many arguments: $1"
+    fi
+    bin_arg=$1
+    shift
+done
+
+url=${GIT_BIN_REMOTE:-$DEFAULT_REMOTE}
+branch=${GIT_BIN_BRANCH:-$DEFAULT_BRANCH}
+
+fnDisplayRevision
+
+if ! command -v git >/dev/null 2>&1; then
+    die "git is not installed. $(fnInstallHint)"
+fi
+[[ -n "${HOME:-}" ]] || die "HOME is not set."
+[[ "$branch" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ && "$branch" != *..* ]] || die "Branch name is not usable: ${branch}"
+
+if [[ -z "$bin_arg" ]]; then
+    bin_arg="${HOME}/bin"
+fi
+bin=$(fnResolveDir "$bin_arg")
+
+was_repo=0
+if [[ -d "${bin}/.git" ]]; then
+    was_repo=1
+fi
+created=0
+fnEnsureCheckout "$bin" "$url" "$branch"
+git -C "$bin" config core.autocrlf false
+
+echo -e "${IWhite}Fetching ${ICyan}${url}${IWhite} (${branch})${ColorReset}"
+if ! git -C "$bin" fetch origin "$branch"; then
+    echo -e "${IRed}Could not fetch.${ColorReset}" >&2
+    echo -e "${IWhite}This is a private repo, so this machine has to be allowed in.${ColorReset}" >&2
+    echo -e "${IYellow}  ssh -T git@github.com${ColorReset}" >&2
+    echo -e "${IWhite}Or use HTTPS:${ColorReset}" >&2
+    echo -e "${IYellow}  GIT_BIN_REMOTE=https://github.com/eckirchn/Bash.git gitBinUpdate${ColorReset}" >&2
+    exit 1
+fi
+
+if ! git -C "$bin" rev-parse --verify --quiet "origin/${branch}" >/dev/null; then
+    die "Remote has no branch ${branch}."
+fi
+
+count=$(git -C "$bin" ls-tree -r --name-only "origin/${branch}" | wc -l)
+count=${count// /}
+noun=files
+if [[ "$count" -eq 1 ]]; then
+    noun=file
+fi
+echo -e "${IWhite}Writing ${ICyan}${count}${IWhite} repo ${noun} into ${ICyan}${bin}${ColorReset}"
+echo -e "${IWhite}Files that are not in the repo are not deleted.${ColorReset}"
+fnWriteRepoFiles "$bin" "$branch"
+
+if [[ "$from_create" -eq 1 && "$created" -eq 1 ]]; then
+    echo -e "${IGreen}Created the checkout and wrote the repo files.${ColorReset}"
+elif [[ "$from_create" -eq 1 ]]; then
+    echo -e "${IGreen}Checkout was already there. Repo files were updated.${ColorReset}"
+elif [[ "$was_repo" -eq 0 ]]; then
+    echo -e "${IGreen}No checkout yet. Created one and wrote the repo files.${ColorReset}"
+else
+    echo -e "${IGreen}Updated the repo files.${ColorReset}"
+fi
+echo
+fnShowLocalFiles "$bin"
+echo
+echo -e "${IWhite}Next time, from any directory:${ColorReset}"
+echo -e "${IYellow}  gitBinUpdate${ColorReset}"

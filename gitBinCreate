@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Updated: 24 October 2026, 2:55 AM MDT
+# gitBinCreate — first checkout of the Bash repo into $HOME/bin.
+# Same rules as gitBinUpdate: repo files are replaced, other files stay.
+
+set -euo pipefail
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [[ ! -f "${here}/gitBinUpdate" ]]; then
+    echo "gitBinUpdate has to sit next to gitBinCreate (${here})." >&2
+    exit 1
+fi
+exec "${here}/gitBinUpdate" --from-create "$@"

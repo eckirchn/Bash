@@ -2,6 +2,14 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 2:55 AM MDT
+
+`gitBinCreate` and `gitBinUpdate`. On the BirdNet Pi, `git -C "$HOME/bin" fetch` failed because `$HOME/bin` is a directory of scripts, not a checkout (`fatal: not a git repository`).
+
+`gitBinCreate` is the first run. Clone the repo to a temp directory, then run `/tmp/Bash/gitBinCreate`. It turns `$HOME/bin` into a checkout of `git@github.com:eckirchn/Bash.git`. `gitBinUpdate` does that same create when `.git` is missing, and on later runs it only refreshes files. Both refuse a directory that already tracks a different remote.
+
+Neither script deletes files. A name that is in the repo is overwritten, including a local edit to that name. A script that exists only in `bin` is left alone, not added, and not pushed. `git clean` and `git reset --hard` are not used. A file dropped from the repo on GitHub stays on disk and becomes untracked. Docs: `docs/gitBinCreate.md`, `docs/gitBinUpdate.md`. The README no longer tells you to `reset --hard`.
+
 ## 24 October 2026, 2:36 AM MDT
 
 `sshkeygen` for current Fedora, Ubuntu, Raspberry Pi OS, Git Bash, and Windows PowerShell. The live scripts are `sshkeygen` and `sshkeygen.ps1`. Documented in `docs/sshkeygen.md`.
