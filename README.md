@@ -1,10 +1,8 @@
 # Bash scripts
 
-Updated: 23 October 2026, 10:31 PM MDT
+Updated: 24 October 2026, 2:36 AM MDT
 
-Private scripts for finding black-frame cut points, reviewing the pieces, and compiling one high-quality file from what you keep.
-
-Checked out at `$HOME/bin`. Sync with:
+Private scripts. SSH key setup, then the black-frame cut workflow. Checked out at `$HOME/bin`. Sync with:
 
 ```bash
 git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main
@@ -13,6 +11,24 @@ git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main
 Scripts are stored executable. History is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Latest usage
+
+### SSH key for one server
+
+```bash
+sshkeygen myserver
+ssh myserver
+```
+
+From Windows PowerShell, same job:
+
+```powershell
+.\sshkeygen.ps1 myserver
+ssh myserver
+```
+
+That writes `~/.ssh/id_ed25519.myserver` and a `Host myserver` block. Fedora, Ubuntu, Raspberry Pi OS, Git Bash, and Windows PowerShell can run it. The server is Fedora, Ubuntu, or Raspberry Pi OS. Details: [docs/sshkeygen.md](docs/sshkeygen.md).
+
+### Black frames
 
 ```bash
 h264BlackFrameExtract MyClip.mp4
@@ -36,11 +52,13 @@ The batch script does not compile.
 
 | Script | Doc | Result |
 |---|---|---|
+| `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
+| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
 | `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
 | `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) | `MyClip.h265.mp4` |
 
-Overview: [GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf](GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf)
+Black-frame overview: [GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf](GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf)
 
-Machine these settings were chosen for: Intel Xeon E5-2680, 8 cores / 16 threads, Debian, no hardware video encoder.
+Machine the video settings were chosen for: Intel Xeon E5-2680, 8 cores / 16 threads, Debian, no hardware video encoder.

@@ -2,6 +2,14 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 2:36 AM MDT
+
+`sshkeygen` for current Fedora, Ubuntu, Raspberry Pi OS, Git Bash, and Windows PowerShell. The live scripts are `sshkeygen` and `sshkeygen.ps1`. Documented in `docs/sshkeygen.md`.
+
+Imported the 26 January 2019 script unchanged as `archive/sshkeygen-20190126`. Its own stamp was `20190126_1116`. Time zone was not recorded. That copy is not the one to run. It required `fpaste` before it would do anything, so it stops on Ubuntu and Raspberry Pi OS, where that package is not installed. It built an empty-passphrase RSA 4096 key, forced the comment to a fixed name at `$HOSTNAME`, and stored the key under `/home/$USER` instead of `$HOME`. It appended a `Host` block on every new key, so a second `Host` for the same name sat below the first one and SSH ignored it. There was no `IdentitiesOnly`, no port, and no remote user other than the local account. If `ssh-copy-id` failed it printed the public key and uploaded it with `fpaste`. The success text said the local `authorized_keys` file was updated; the key actually goes to the server. It then told the operator to set `PasswordAuthentication no`, `ChallengeResponseAuthentication no`, and `UsePAM no`. On current OpenSSH the keyboard setting is `KbdInteractiveAuthentication`. `UsePAM no` is the wrong advice on Fedora, Ubuntu, and Raspberry Pi OS.
+
+The new script keeps a separate key per host, `id_ed25519.<alias>` unless `-t rsa` is set. A passphrase is prompted for unless `--empty-passphrase` or `-N` is passed. The managed block is marked `# BEGIN sshkeygen <alias>` / `# END sshkeygen <alias>` and written at the top of `~/.ssh/config`, with `IdentitiesOnly yes` and `IdentityFile ~/.ssh/...`. A second run reuses the key and replaces that block instead of duplicating it. `ssh-copy-id` is used when it is installed. Windows OpenSSH has no `ssh-copy-id`, so `sshkeygen.ps1` (and the bash script, if the helper is missing) appends the public key with `ssh`. Nothing is sent to a paste site. The script does not edit `sshd`. After a successful copy it prints the reload command for Fedora (`sshd`), Ubuntu (`ssh`), and Raspberry Pi OS (`ssh`), and it says to test in a second terminal first.
+
 ## 23 October 2026, 10:31 PM MDT
 
 Documentation cross-links. The extractor doc names both compile scripts as companions. Each compile doc links back to `h264BlackFrameExtract`. Examples use `MyClip` instead of a real recording name. The executive summary moved to `GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf`.
