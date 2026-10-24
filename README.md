@@ -1,82 +1,62 @@
 # Bash scripts
 
-Updated: 24 October 2026, 6:57 AM MDT
+Updated: 24 October 2026, 7:12 AM MDT
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
-## Install (clone anywhere, copy what you need)
+## Get the scripts
 
 ```bash
-# Clone to a location of your choice
 git clone https://github.com/eckirchn/Bash.git
 cd Bash
-
-# Copy the scripts you want into a directory already on your PATH
-mkdir -p "$HOME/bin"
-cp sshkeygen "$HOME/bin/"
-# repeat for any other scripts you need
-chmod +x "$HOME/bin/"*
 ```
 
-If `$HOME/bin` is not on your `PATH`:
+Clone to any directory you like (for example `$HOME/Bash`).
+
+## Run a script from anywhere
+
+You do not have to copy scripts or change your `PATH`. Examples:
 
 ```bash
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+# Full path — works from any directory
+$HOME/Bash/h264BlackFrameCompile
+
+# Or change into the clone and run with ./
+cd $HOME/Bash
+./h264BlackFrameCompile
+./sshkeygen myserver
 ```
 
-Alternatively, leave the clone where it is and add that directory to your `PATH`.
+If you prefer the scripts on your `PATH`, copy the ones you want into a directory that is already on it (commonly `$HOME/bin`) and `chmod +x` them. That step is optional.
 
-## Later updates (personal checkout in `$HOME/bin`)
+## Later updates
 
-If you keep a full checkout in `$HOME/bin`:
+If you keep a checkout in `$HOME/bin` you can refresh it with `gitBinUpdate`. Otherwise just `git pull` inside your clone.
 
-```bash
-gitBinUpdate
-```
-
-Repo files are replaced. A script that exists only in that directory and is not in the repository is left alone. Details: [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
-
-## SSH key for one server
-
-After the script is on your `PATH`:
+## Examples
 
 ```bash
-sshkeygen myserver
-```
+# SSH key (run on the client)
+./sshkeygen myserver
 
-Details: [docs/sshkeygen.md](docs/sshkeygen.md).
-
-Windows PowerShell companion (`sshkeygen.ps1`) is non-Bash and optional.
-
-## Black frames
-
-```bash
-h264BlackFrameExtract MyClip.mp4
+# Black frames
+./h264BlackFrameExtract MyClip.mp4
 cd MyClip_work
-# delete the lq_previews you do not want, then:
-h264BlackFrameCompile
-h265BlackFrameCompile
+# remove the previews you do not want, then:
+./h264BlackFrameCompile
+./h265BlackFrameCompile
 ```
 
-`h264BlackFrameExtract` writes `MyClip_work/`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the copied source. Either compile can be used. They do not overwrite each other.
-
-To detect every `.mp4` in a directory, one after another:
-
-```bash
-h264BlackFrameExtract-batch
-```
-
-The batch script does not compile.
+See the individual files under `docs/` for more detail on each script.
 
 ## Scripts
 
-| Script | Doc | Result |
-|---|---|---|
-| `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
-| `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
-| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell (non-Bash) |
-| `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
-| `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
-| `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
-| `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) | `MyClip.h265.mp4` |
+| Script | Doc |
+|--------|-----|
+| `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) |
+| `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) |
+| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) (non-Bash, optional) |
+| `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) |
+| `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) |
+| `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) |
+| `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) |
