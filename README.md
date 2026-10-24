@@ -32,13 +32,13 @@ Creates `<name>_work/` next to the current directory:
 | Path | What it is |
 |---|---|
 | `lq_previews/` | 180p ultrafast CRF 28 previews, one clip per segment |
-| `<name>_hq.sh` | HQ encode (`libx264` medium, CRF 18, `-threads 0`) |
+| `<name>_hq.sh` | launcher; runs `h264BlackFrameCompile` in this folder |
 | `<name>_black.log` | `start end duration` of each black run |
 | `<name>_clips.log` | clip id and `tStart` / `tStop` |
 
 The source file is copied into the work directory, not moved.
 
-Review the LQ clips and delete the ones you do not want. Then run `h264BlackFrameCompile` in that `_work` directory. The generated `<name>_hq.sh` encodes every detected segment, including ones whose previews you deleted. Use Compile instead.
+Review the LQ clips and delete the ones you do not want. Then run `h264BlackFrameCompile` in that `_work` directory (or `sh <name>_hq.sh`, which only launches Compile). Do not pass the old two-argument form; that script no longer encodes by itself.
 
 **How cuts are chosen.** `blackdetect` reports black runs. The midpoint of each run is the cut. Clips run from the previous midpoint (or 0) to the next midpoint, then a final clip to the end of the file.
 

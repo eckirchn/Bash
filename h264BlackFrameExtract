@@ -179,7 +179,10 @@ fnGenerateLQClips() {
     echo
 }
 
-# ---------- emit HQ generation script ----------
+# ---------- emit HQ launcher ----------
+# The real encode is h264BlackFrameCompile, which keeps only the LQ
+# previews you did not delete. This file is just a launcher so the
+# thing sitting in the work directory does that, with no arguments.
 fnEmitHQScript() {
     local infile="$1"
     local cliplog="$2"
@@ -187,43 +190,20 @@ fnEmitHQScript() {
     local outdir="$4"
 
     cat > "$hqscript" << 'EOF'
-#!/bin/bash
-# Auto-generated HQ clip script — re-uses the cut points from the LQ pass.
-# Run on the original high-quality source.
-set -euo pipefail
-INFILE="$1"
-OUTDIR="$2"
-mkdir -p "$OUTDIR"
+#!/bin/sh
+# Delete the LQ previews you do not want, then run this.
+# It encodes the clips still in lq_previews into <source>.clean.mp4.
+cd "$(dirname "$0")" || exit 1
+if ! command -v h264BlackFrameCompile >/dev/null 2>&1; then
+    echo "h264BlackFrameCompile is not on PATH." >&2
+    echo 'git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main' >&2
+    exit 1
+fi
+exec h264BlackFrameCompile .
 EOF
-
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        local clip tstart tstop
-        clip=$(echo "$line" | grep -oP '(?<=Clip:).*' | cut -f1 -d' ')
-        tstart=$(echo "$line" | grep -oP '(?<=tStart:).*' | cut -f1 -d' ')
-        tstop=$(echo "$line" | grep -oP '(?<=tStop:).*' | cut -f1 -d' ')
-        local length pre=10 prestart acc
-        length=$(bc -l <<< "$tstop - $tstart")
-        if (( $(bc -l <<< "$tstart >= $pre") )); then
-            prestart=$(bc -l <<< "$tstart - $pre")
-            acc=$pre
-        else
-            prestart=0
-            acc=$tstart
-        fi
-        cat >> "$hqscript" << EOF
-echo "HQ Clip $clip  $tstart–$tstop"
-ffmpeg -nostdin -hide_banner -stats -loglevel error \\
-  -ss $prestart -i "\$INFILE" -ss $acc -t $length \\
-  -threads 0 -c:v libx264 -preset medium -crf 18 \\
-  -pix_fmt yuv420p -movflags +faststart \\
-  -c:a copy -y "\$OUTDIR/HQ_Clip${clip}_${tstart}-${tstop}.mp4"
-EOF
-    done < "$cliplog"
-
     chmod +x "$hqscript"
-    echo -e "${IGreen}HQ script written: ${ICyan}$hqscript${ColorReset}"
-    echo -e "Usage: ${IYellow}bash $hqscript /path/to/original.mp4 ./hq_clips${ColorReset}"
+    echo -e "${IGreen}HQ launcher written: ${ICyan}$hqscript${ColorReset}"
+    echo -e "After deleting unwanted previews: ${IYellow}sh $hqscript${ColorReset}"
     echo
 }
 
@@ -271,4 +251,4 @@ echo -e "HQ script:   ${ICyan}$WORKDIR/$HQSCRIPT${ColorReset}"
 echo -e "Black log:   ${ICyan}$WORKDIR/$BLACKLOG${ColorReset}"
 echo -e "Clip log:    ${ICyan}$WORKDIR/$CLIPLOG${ColorReset}"
 echo
-echo -e "${IWhite}Review the LQ clips, delete what you don't want, then run the HQ script on the original source.${ColorReset}"
+echo -e "${IWhite}Review the LQ clips, delete what you don't want, then run h264BlackFrameCompile in the work directory.${ColorReset}"
