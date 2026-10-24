@@ -1,10 +1,10 @@
 # h265BlackFrameCompile
 
-Updated: 23 October 2026, 10:31 PM MDT
+Updated: 24 October 2026, 3:07 AM MDT
 
 Same job as [h264BlackFrameCompile](h264BlackFrameCompile.md), with HEVC. It calls that script with `--hevc`.
 
-This is a companion to [h264BlackFrameExtract](h264BlackFrameExtract.md). That script detects the black frames and writes the previews. This script only encodes the previews you left in place.
+This is a companion to [blackframeextract](blackframeextract.md). That script detects the black frames, moves the source into `MyClip/`, and writes the previews. This script only encodes the previews you left in place.
 
 ## Run
 

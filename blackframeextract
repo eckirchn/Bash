@@ -1,32 +1,28 @@
 #!/bin/bash
-# Updated: 23 October 2026, 10:25 PM MDT
-# h264BlackFrameExtract — modernized for multi-threaded FFmpeg and command-line use
-# Goal: detect black-frame cut points, emit LQ preview clips for review,
-#       and generate a companion HQ script that re-uses the same timestamps
-#       on the original source.
+# Updated: 24 October 2026, 3:07 AM MDT
+# blackframeextract
+# Find black-frame cut points and write preview clips for review.
+# The source file is moved into a folder named after it:
+#   MyClip.mp4  ->  MyClip/MyClip.mp4
 #
-# Changes from 2018–2020 version:
-#   - blackdetect instead of blackframe + full log scrape
-#   - no xterm / no artificial -threads 1 / no CPU-sleep throttle
-#   - FFmpeg does its own multi-threading (-threads 0)
-#   - sequential (or lightly parallel) LQ generation so the old Xeon stays usable
-#   - Debian-friendly dependency checks
+# Detection skips B-frames and measures black on a 160px-wide image.
+# That is faster than a full-size scan and still catches commercial breaks.
+# Previews are 288p, ultrafast, CRF 26: easier to judge than 180p,
+# still small next to the source.
 
 set -euo pipefail
 
-# ---------- colors ----------
 ColorReset='\033[0m'
 IWhite='\033[0;97m'
 IYellow='\033[0;93m'
 ICyan='\033[0;96m'
 IGreen='\033[0;92m'
 IRed='\033[0;91m'
-IBlue='\033[0;94m'
 IPurple='\033[0;95m'
 
 fnDisplayRevision() {
-    echo -e "${IWhite}Script Revision:${IYellow}  20261022_modern${ColorReset}"
-    echo -e "${IPurple}  blackdetect, multi-threaded FFmpeg, no xterm, Debian-friendly${ColorReset}"
+    echo -e "${IWhite}Script Revision:${IYellow}  20261024_0307${ColorReset}"
+    echo -e "${IPurple}  blackframeextract, move source, faster blackdetect, 288p previews${ColorReset}"
     echo
 }
 
@@ -49,7 +45,6 @@ fnDepCheck() {
     echo
 }
 
-# ---------- helpers ----------
 fnGetFPS() {
     local file="$1"
     ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate \
@@ -61,19 +56,21 @@ fnGetDuration() {
     ffprobe -v error -show_entries format=duration -of csv=p=0 "$file"
 }
 
-# ---------- blackdetect ----------
 fnDetectBlackSegments() {
     local infile="$1"
     local outfile="$2"
 
-    # Tunable thresholds — adjust per source type if needed
-    local d=0.15          # min black duration (seconds)
-    local pic_th=0.98     # fraction of frame that must be black
-    local pix_th=0.12     # pixel darkness threshold (0–1, scaled to range)
+    local d=0.15
+    local pic_th=0.98
+    local pix_th=0.12
 
     echo -e "${IWhite}Running blackdetect on ${ICyan}$infile${ColorReset}"
-    ffmpeg -nostdin -hide_banner -loglevel info -i "$infile" \
-        -vf "blackdetect=d=${d}:pic_th=${pic_th}:pix_th=${pix_th}" \
+    # -skip_frame bidir drops B-frames before they are reconstructed.
+    # scale makes the black test cheap. Commercial blacks are long enough
+    # to still show up on the I and P frames that remain.
+    ffmpeg -nostdin -hide_banner -loglevel info \
+        -threads 0 -skip_frame bidir -i "$infile" \
+        -vf "scale=160:-2:flags=fast_bilinear,blackdetect=d=${d}:pic_th=${pic_th}:pix_th=${pix_th}" \
         -an -sn -f null - 2>&1 \
         | grep -E 'black_start|black_end|black_duration' \
         | sed -E 's/.*black_start:([0-9.]+).*black_end:([0-9.]+).*black_duration:([0-9.]+).*/\1 \2 \3/' \
@@ -89,23 +86,19 @@ fnDetectBlackSegments() {
     echo
 }
 
-# ---------- turn black segments into clip boundaries ----------
 fnIdentifyClips() {
     local infile="$1"
     local blacklog="$2"
     local cliplog="$3"
 
-    local fps duration nframes
+    local fps duration
     fps=$(fnGetFPS "$infile")
     duration=$(fnGetDuration "$infile")
-    # rough frame count for last-clip end
-    nframes=$(bc -l <<< "$duration * $fps" 2>/dev/null || echo 0)
 
     : > "$cliplog"
     local clip=0
     local prev_end=0
 
-    # midpoints of black segments become the cut points
     while read -r start end dur; do
         [[ -z "${start:-}" ]] && continue
         local mid
@@ -126,7 +119,6 @@ fnIdentifyClips() {
         prev_end=$mid
     done < "$blacklog"
 
-    # final clip to end of file
     clip=$((clip + 1))
     local cfill
     cfill=$(printf "%03d" "$clip")
@@ -138,14 +130,13 @@ fnIdentifyClips() {
     echo
 }
 
-# ---------- generate LQ clips (multi-threaded FFmpeg, sequential) ----------
 fnGenerateLQClips() {
     local infile="$1"
     local cliplog="$2"
     local outdir="$3"
 
     mkdir -p "$outdir"
-    echo -e "${IWhite}Generating LQ preview clips into ${ICyan}$outdir${ColorReset}"
+    echo -e "${IWhite}Generating preview clips into ${ICyan}$outdir${ColorReset}"
 
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
@@ -158,9 +149,7 @@ fnGenerateLQClips() {
         length=$(bc -l <<< "$tstop - $tstart")
         local outfile="${outdir}/LQ_Clip${clip}_${tstart}-${tstop}.mp4"
 
-        echo -e "${IGreen}LQ Clip $clip${ColorReset}  ${tstart}–${tstop} (${length}s)"
-        # Fast keyframe seek, then a short accurate seek so the cut is not GOP-aligned.
-        # FFmpeg uses all cores (-threads 0). One encode at a time.
+        echo -e "${IGreen}Preview $clip${ColorReset}  ${tstart}–${tstop} (${length}s)"
         local pre=10
         local prestart="$tstart"
         local acc=0
@@ -174,26 +163,19 @@ fnGenerateLQClips() {
         ffmpeg -nostdin -hide_banner -stats -loglevel error \
             -ss "$prestart" -i "$infile" -ss "$acc" -t "$length" \
             -threads 0 -c:v libx264 -preset ultrafast \
-            -vf "scale=-2:180" -crf 28 -movflags +faststart \
+            -vf "scale=-2:288" -crf 26 -movflags +faststart \
             -c:a copy -y "$outfile" || echo -e "${IRed}Failed: $outfile${ColorReset}"
     done < "$cliplog"
     echo
 }
 
-# ---------- emit HQ launcher ----------
-# The real encode is h264BlackFrameCompile, which keeps only the LQ
-# previews you did not delete. This file is just a launcher so the
-# thing sitting in the work directory does that, with no arguments.
 fnEmitHQScript() {
-    local infile="$1"
-    local cliplog="$2"
-    local hqscript="$3"
-    local outdir="$4"
+    local hqscript="$1"
 
     cat > "$hqscript" << 'EOF'
 #!/bin/sh
-# Delete the LQ previews you do not want, then run this.
-# It encodes the clips still in lq_previews into <source>.h264.mp4.
+# Delete the previews you do not want, then run this.
+# It encodes the clips still in lq_previews into MyClip.h264.mp4.
 cd "$(dirname "$0")" || exit 1
 if ! command -v h264BlackFrameCompile >/dev/null 2>&1; then
     echo "h264BlackFrameCompile is not on PATH." >&2
@@ -208,7 +190,6 @@ EOF
     echo
 }
 
-# ---------- main ----------
 fnDisplayRevision
 fnDepCheck
 
@@ -217,23 +198,37 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
-INFILE="$1"
-if [[ ! -f "$INFILE" ]]; then
-    echo -e "${IRed}File not found: $INFILE${ColorReset}"
+if [[ ! -f "$1" ]]; then
+    echo -e "${IRed}File not found: $1${ColorReset}"
     exit 1
 fi
 
+INFILE=$(readlink -f "$1")
 BASE=$(basename "$INFILE")
 BNAME="${BASE%.*}"
-INFILE=$(readlink -f "$INFILE")
-WORKDIR="${BNAME}_work"
-mkdir -p "$WORKDIR"
-cd "$WORKDIR"
+PARENT=$(dirname "$INFILE")
 
-# copy (don't move) so original stays put
-if [[ ! -f "$BASE" ]]; then
-    cp -v "$INFILE" "./$BASE"
+# Already inside MyClip/MyClip.mp4: that folder is the work directory.
+if [[ "$(basename "$PARENT")" == "$BNAME" ]]; then
+    WORKDIR="$PARENT"
+else
+    WORKDIR="$PARENT/$BNAME"
+    if [[ -e "$WORKDIR" && ! -d "$WORKDIR" ]]; then
+        echo -e "${IRed}Cannot create folder (a file is in the way): $WORKDIR${ColorReset}"
+        exit 1
+    fi
+    mkdir -p "$WORKDIR"
+    DEST="$WORKDIR/$BASE"
+    if [[ "$INFILE" != "$(readlink -f "$DEST")" ]]; then
+        if [[ -e "$DEST" ]]; then
+            echo -e "${IRed}Refusing to move; already exists: $DEST${ColorReset}"
+            exit 1
+        fi
+        mv -v "$INFILE" "$DEST"
+    fi
 fi
+
+cd "$WORKDIR"
 INFILE="./$BASE"
 
 BLACKLOG="${BNAME}_black.log"
@@ -244,12 +239,14 @@ HQSCRIPT="${BNAME}_hq.sh"
 fnDetectBlackSegments "$INFILE" "$BLACKLOG"
 fnIdentifyClips "$INFILE" "$BLACKLOG" "$CLIPLOG"
 fnGenerateLQClips "$INFILE" "$CLIPLOG" "$LQDIR"
-fnEmitHQScript "$INFILE" "$CLIPLOG" "$HQSCRIPT" "hq_clips"
+fnEmitHQScript "$HQSCRIPT"
 
 echo -e "${IGreen}Done.${ColorReset}"
-echo -e "LQ previews: ${ICyan}$WORKDIR/$LQDIR${ColorReset}"
-echo -e "HQ script:   ${ICyan}$WORKDIR/$HQSCRIPT${ColorReset}"
+echo -e "Folder:      ${ICyan}$WORKDIR${ColorReset}"
+echo -e "Source:      ${ICyan}$WORKDIR/$BASE${ColorReset}"
+echo -e "Previews:    ${ICyan}$WORKDIR/$LQDIR${ColorReset}"
+echo -e "HQ launcher: ${ICyan}$WORKDIR/$HQSCRIPT${ColorReset}"
 echo -e "Black log:   ${ICyan}$WORKDIR/$BLACKLOG${ColorReset}"
 echo -e "Clip log:    ${ICyan}$WORKDIR/$CLIPLOG${ColorReset}"
 echo
-echo -e "${IWhite}Review the LQ clips, delete what you don't want, then run h264BlackFrameCompile in the work directory.${ColorReset}"
+echo -e "${IWhite}Delete the previews you do not want, then run h264BlackFrameCompile or h265BlackFrameCompile here.${ColorReset}"

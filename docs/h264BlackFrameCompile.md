@@ -1,10 +1,10 @@
 # h264BlackFrameCompile
 
-Updated: 23 October 2026, 10:31 PM MDT
+Updated: 24 October 2026, 3:07 AM MDT
 
 Builds one H.264 file from the low-quality previews that are still in the work folder. A deleted preview is a cut you do not want. Timestamps come from the filename, not from how long the preview plays.
 
-This is a companion to [h264BlackFrameExtract](h264BlackFrameExtract.md). That script detects the black frames and writes the previews. This script does not detect anything. The HEVC companion is [h265BlackFrameCompile](h265BlackFrameCompile.md).
+This is a companion to [blackframeextract](blackframeextract.md). That script detects the black frames, moves the source into `MyClip/`, and writes the previews. This script does not detect anything. The HEVC companion is [h265BlackFrameCompile](h265BlackFrameCompile.md).
 
 ## Run
 

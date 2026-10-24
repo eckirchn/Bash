@@ -2,6 +2,16 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:07 AM MDT
+
+`h264BlackFrameExtract` is now `blackframeextract`. The batch script is `blackframeextract-batch`. The old names are removed.
+
+The source file is moved, not copied. `MyClip.mp4` becomes `MyClip/MyClip.mp4`. The folder is the source name. New runs do not add `_work`. A file already inside that folder is left in place. Older `MyClip_work` folders still compile.
+
+Black detection skips B-frames (`-skip_frame bidir`) and measures black on a 160-pixel-wide picture, with all 16 threads. Commercial blacks are long enough to remain visible. A black of only a frame or two can be missed. Previews are 288p, still `ultrafast`, CRF 26, so a segment is easier to recognize without a 720p encode. Storage stays small next to the source. The final H.264 and H.265 compile settings are unchanged.
+
+Docs for the extractor and both compile scripts point at each other. Examples use `MyClip`.
+
 ## 24 October 2026, 2:55 AM MDT
 
 `gitBinCreate` and `gitBinUpdate`. On the BirdNet Pi, `git -C "$HOME/bin" fetch` failed because `$HOME/bin` is a directory of scripts, not a checkout (`fatal: not a git repository`).

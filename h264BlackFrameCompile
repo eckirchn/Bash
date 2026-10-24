@@ -1,5 +1,5 @@
 #!/bin/bash
-# Updated: 23 October 2026, 10:25 PM MDT
+# Updated: 24 October 2026, 3:07 AM MDT
 # h264BlackFrameCompile / h265BlackFrameCompile
 # After reviewing lq_previews, delete the clips you do not want.
 # This script encodes whatever is still there, in clip order, into one file.
@@ -7,8 +7,8 @@
 #   h264BlackFrameCompile [work-directory]
 #   h265BlackFrameCompile [work-directory]
 #
-# work-directory is the *_work folder from h264BlackFrameExtract.
-# Default is the current directory.
+# work-directory is the folder blackframeextract made (MyClip/),
+# or an older MyClip_work folder. Default is the current directory.
 #
 # Output sits next to the source copy:
 #   <name>.h264.mp4
@@ -78,7 +78,7 @@ fnFindSource() {
     if (( ${#found[@]} == 0 )); then
         fnDie "No source video in $dir"
     fi
-    fnDie "More than one source video in $dir; name the folder <source>_work"
+    fnDie "More than one source video in $dir; use a folder named after the source"
 }
 
 SOURCE=$(fnFindSource "$WORKDIR")

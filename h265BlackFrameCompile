@@ -1,5 +1,5 @@
 #!/bin/sh
-# Updated: 23 October 2026, 10:25 PM MDT
+# Updated: 24 October 2026, 3:07 AM MDT
 # Same as h264BlackFrameCompile, but encodes HEVC (see that script for the settings).
 here=$(dirname "$0")
 if [ -f "$here/h264BlackFrameCompile" ]; then

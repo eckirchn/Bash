@@ -1,0 +1,11 @@
+#!/bin/bash
+# Updated: 24 October 2026, 3:07 AM MDT
+# Runs blackframeextract on every source .mp4 in the current directory.
+# Finished compiles (*.h264.mp4, *.h265.mp4) and preview clips are skipped.
+shopt -s nullglob
+for f in *.mp4; do
+    [[ "$f" == *.h264.mp4 || "$f" == *.h265.mp4 ]] && continue
+    [[ "$f" == LQ_Clip*.mp4 ]] && continue
+    echo "=== Processing: $f ==="
+    blackframeextract "$f"
+done

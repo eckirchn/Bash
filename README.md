@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 2:55 AM MDT
+Updated: 24 October 2026, 3:07 AM MDT
 
 Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -44,22 +44,22 @@ That writes `~/.ssh/id_ed25519.myserver` and a `Host myserver` block. Fedora, Ub
 ### Black frames
 
 ```bash
-h264BlackFrameExtract MyClip.mp4
-cd MyClip_work
+blackframeextract MyClip.mp4
+cd MyClip
 # delete the lq_previews you do not want, then:
 h264BlackFrameCompile
 h265BlackFrameCompile
 ```
 
-`h264BlackFrameExtract` writes `MyClip_work/`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the copied source. Either compile can be used. They do not overwrite each other.
+`blackframeextract` moves `MyClip.mp4` into `MyClip/MyClip.mp4`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the source. Either compile can be used. They do not overwrite each other. Older `MyClip_work` folders still compile.
 
-To detect every `.mp4` in a directory, one after another:
+To detect every source `.mp4` in a directory, one after another:
 
 ```bash
-h264BlackFrameExtract-batch
+blackframeextract-batch
 ```
 
-The batch script does not compile.
+The batch script does not compile. It skips files already named `.h264.mp4` or `.h265.mp4`.
 
 ## Scripts
 
@@ -69,8 +69,8 @@ The batch script does not compile.
 | `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
 | `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
 | `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
-| `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
-| `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
+| `blackframeextract` | [docs/blackframeextract.md](docs/blackframeextract.md) | `MyClip/` with the source moved in, plus previews |
+| `blackframeextract-batch` | [docs/blackframeextract-batch.md](docs/blackframeextract-batch.md) | one folder per source `.mp4` |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) | `MyClip.h265.mp4` |
 
