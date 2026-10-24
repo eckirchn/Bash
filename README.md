@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 3:19 AM MDT
+Updated: 24 October 2026, 3:24 AM MDT
 
 Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -17,13 +17,25 @@ git clone https://github.com/eckirchn/Bash.git /tmp/Bash
 /tmp/Bash/gitBinCreate
 ```
 
-Git asks for the GitHub login and a personal access token on that first HTTPS clone. It does not change `~/.ssh`. After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH. A machine with no GitHub key, such as the BirdNet Pi, is not expected to fetch over SSH.
+Git asks for the GitHub login and a personal access token on that first HTTPS clone. It does not change `~/.ssh`. After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH.
 
 ```bash
 gitBinUpdate
 ```
 
 Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinCreate.md](docs/gitBinCreate.md), [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
+
+This private repo is the beta copy. Only the machine that already has a GitHub key should pull it.
+
+### Public release
+
+Other machines do not need a key. The public files are `sshkeygen` and `sshkeygen.ps1`:
+
+```bash
+git clone https://github.com/eckirchn/sshkeygen.git
+```
+
+The black-frame scripts and `gitBinCreate` / `gitBinUpdate` are not in that public repo.
 
 ### SSH key for one server
 

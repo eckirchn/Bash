@@ -1,6 +1,8 @@
 # sshkeygen
 
-Updated: 24 October 2026, 2:36 AM MDT
+Updated: 24 October 2026, 3:24 AM MDT
+
+Public copy, no login required: `https://github.com/eckirchn/sshkeygen`
 
 Makes one SSH key for one server, writes a `Host` block at the top of `~/.ssh/config`, and tries to install the public key.
 

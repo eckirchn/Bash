@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:24 AM MDT
+
+Only one machine needs the private beta. `sshkeygen` and `sshkeygen.ps1` are published at `https://github.com/eckirchn/sshkeygen`, which is public. Another machine clones that URL over HTTPS with no account and no SSH key. The black-frame scripts and `gitBinCreate` / `gitBinUpdate` stay in this private repo.
+
 ## 24 October 2026, 3:19 AM MDT
 
 The Xeon checkout fetched `8efec67` over SSH with `git fetch` and `reset --hard`. That machine already had a GitHub key. `gitBinUpdate` can keep using that origin.
