@@ -1,10 +1,12 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 3:14 AM MDT
+Updated: 24 October 2026, 3:17 AM MDT
 
-Writes the current repo files into `$HOME/bin` over HTTPS. Files that are not in the repo are left in place.
+Writes the current repo files into `$HOME/bin`. Files that are not in the repo are left in place.
 
-If `$HOME/bin` is not a checkout yet, this does the same job as [gitBinCreate](gitBinCreate.md).
+If `$HOME/bin` is not a checkout yet, this does the same job as [gitBinCreate](gitBinCreate.md) and the new origin is HTTPS.
+
+If the checkout already has an origin, that URL is kept. On the machine where `git@github.com:eckirchn/Bash.git` already fetches, this keeps using it. The script does not switch that remote to HTTPS, and it does not block SSH.
 
 It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
 

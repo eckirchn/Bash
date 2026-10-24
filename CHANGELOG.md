@@ -2,6 +2,12 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:17 AM MDT
+
+`gitBinUpdate` on the Xeon failed after `adf6a34`. That checkout's origin was still `git@github.com:eckirchn/Bash.git`, and a plain `git fetch` over SSH succeeded. The script then set `GIT_SSH_COMMAND` to refuse SSH because its default URL is HTTPS, so the fetch died with `Refusing SSH` and `Could not fetch`.
+
+The script no longer does that. An origin that is already this repo is fetched as it is. SSH stays SSH. HTTPS stays HTTPS, still pinned so a global rewrite cannot turn it into SSH. A brand-new checkout still uses HTTPS, so a machine whose GitHub key is for something else is not offered that key. `~/.ssh` is still not read or written.
+
 ## 24 October 2026, 3:14 AM MDT
 
 `gitBinCreate` and `gitBinUpdate` no longer default to `git@github.com`. On BirdNet, an SSH clone was refused with `Permission denied (publickey)`. That Pi may already have a GitHub key from the BirdNET-Pi install. These scripts do not call `ssh-keygen`, do not write `~/.ssh`, and do not add a `Host github.com` block. The default URL is `https://github.com/eckirchn/Bash.git`. An https URL is pinned so a global rewrite to SSH does not catch it, and an https fetch will not run `ssh`. A private fetch asks for the GitHub login and a personal access token. Local-only files in `bin` are still left in place. A directory that already tracks a different remote is still refused.

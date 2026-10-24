@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 3:14 AM MDT
+Updated: 24 October 2026, 3:17 AM MDT
 
 Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -17,7 +17,7 @@ git clone https://github.com/eckirchn/Bash.git /tmp/Bash
 /tmp/Bash/gitBinCreate
 ```
 
-Git asks for the GitHub login and a personal access token. It does not use an SSH key, and it does not change `~/.ssh`. After that:
+Git asks for the GitHub login and a personal access token on that first HTTPS clone. It does not change `~/.ssh`. After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH.
 
 ```bash
 gitBinUpdate

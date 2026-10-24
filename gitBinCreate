@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Updated: 24 October 2026, 3:14 AM MDT
+# Updated: 24 October 2026, 3:17 AM MDT
 # gitBinCreate — first checkout of the Bash repo into $HOME/bin.
 # Same rules as gitBinUpdate: repo files are replaced, other files stay.
 

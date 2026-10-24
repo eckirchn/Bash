@@ -1,12 +1,12 @@
 # gitBinCreate
 
-Updated: 24 October 2026, 3:14 AM MDT
+Updated: 24 October 2026, 3:17 AM MDT
 
 First checkout of this repo into `$HOME/bin`. It runs [gitBinUpdate](gitBinUpdate.md).
 
 `$HOME/bin` on a machine that only has copied scripts is not a git checkout. `git fetch` there fails with `fatal: not a git repository`. This script turns that directory into a checkout without deleting the scripts that are not in the repo.
 
-It does not read or write `~/.ssh`. It does not run `ssh-keygen`. It does not change an SSH config. The default URL is HTTPS, so a key already on the machine is not offered to GitHub. That includes a key a BirdNET-Pi install may already be using.
+It does not read or write `~/.ssh`. It does not run `ssh-keygen`. It does not change an SSH config. A new checkout uses HTTPS, so a key already on the machine is not offered to GitHub. A checkout that already points at this repo over SSH is left on SSH.
 
 ## First run
 

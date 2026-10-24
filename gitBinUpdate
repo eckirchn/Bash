@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Updated: 24 October 2026, 3:14 AM MDT
+# Updated: 24 October 2026, 3:17 AM MDT
 # gitBinUpdate — put the Bash repo into $HOME/bin without deleting local scripts.
 #
 # Overwrites files that are in the repo. Leaves every other file in the
 # directory alone. Does not git clean, and does not reset --hard.
-# Does not read or write SSH keys or SSH config. Default remote is HTTPS,
-# so a key already on the machine is not used.
+# Does not read or write SSH keys or SSH config.
+# A checkout that already has an origin keeps that URL. SSH stays SSH.
+# A new checkout uses HTTPS, so a key meant for something else is not offered.
 # If $HOME/bin is not a checkout yet, this creates one.
 # gitBinCreate is the same job, for the first run.
 
@@ -19,7 +20,7 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261024_0314"
+REV="20261024_0317"
 DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
 DEFAULT_BRANCH="main"
 
@@ -30,7 +31,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  HTTPS checkout into \$HOME/bin. Does not touch SSH keys. Local-only scripts stay.${ColorReset}"
+    echo -e "${IPurple}  Keeps the origin already set. A new checkout uses HTTPS. Does not touch SSH keys.${ColorReset}"
     echo
 }
 
@@ -44,6 +45,7 @@ If that directory is not a git checkout yet, this creates one and then
 writes the repo files. Files already there that are not in the repo are
 not removed. Files that are in the repo are replaced.
 Does not change SSH keys, SSH config, or git settings outside that directory.
+An existing origin URL is kept. A new checkout uses HTTPS.
 If the directory is already a checkout of a different remote, it stops.
 
   GIT_BIN_REMOTE   Default: https://github.com/eckirchn/Bash.git
@@ -162,9 +164,10 @@ fnWriteRepoFiles() {
 }
 
 fnGitFetch() {
-    local bin=$1 branch=$2
-    # Keep an https URL on https even if this machine rewrites GitHub URLs to SSH.
-    if [[ "$url" == https://* && "$url" =~ ^(https://[^/]+/[^/]+/) ]]; then
+    local bin=$1 branch=$2 origin
+    origin=$(git -C "$bin" remote get-url origin)
+    # Pin an https URL so a global insteadOf cannot turn it into SSH.
+    if [[ "$origin" == https://* && "$origin" =~ ^(https://[^/]+/[^/]+/) ]]; then
         git -C "$bin" -c "url.${BASH_REMATCH[1]}.insteadOf=${BASH_REMATCH[1]}" fetch origin "$branch"
         return
     fi
@@ -258,15 +261,17 @@ created=0
 fnEnsureCheckout "$bin" "$url" "$branch"
 git -C "$bin" config core.autocrlf false
 
-echo -e "${IWhite}Fetching ${ICyan}${url}${IWhite} (${branch})${ColorReset}"
-if [[ "$url" == https://* ]]; then
-    GIT_SSH_COMMAND='echo "Refusing SSH. This checkout stays on HTTPS so existing keys are not used." >&2; exit 1'
-    export GIT_SSH_COMMAND
-fi
+echo -e "${IWhite}Fetching ${ICyan}$(git -C "$bin" remote get-url origin)${IWhite} (${branch})${ColorReset}"
+origin_now=$(git -C "$bin" remote get-url origin)
 if ! fnGitFetch "$bin" "$branch"; then
     echo -e "${IRed}Could not fetch.${ColorReset}" >&2
-    echo -e "${IWhite}No SSH key was used. For a private repo, git asks for the GitHub username${ColorReset}" >&2
-    echo -e "${IWhite}and a personal access token as the password. The account password will not work.${ColorReset}" >&2
+    if [[ "$origin_now" == https://* ]]; then
+        echo -e "${IWhite}For a private repo, git asks for the GitHub username${ColorReset}" >&2
+        echo -e "${IWhite}and a personal access token as the password. The account password will not work.${ColorReset}" >&2
+    else
+        echo -e "${IWhite}The origin URL was left as ${origin_now}.${ColorReset}" >&2
+        echo -e "${IWhite}SSH keys and SSH config were not changed.${ColorReset}" >&2
+    fi
     exit 1
 fi
 
