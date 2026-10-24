@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:32 AM MDT
+
+The whole bin directory is public at `https://github.com/eckirchn/bin`. No account is required to clone it. That copy includes the scripts and the docs. It does not include the PDF folder, and it does not name that folder. `gitBinCreate` and `gitBinUpdate` in the public copy fetch `https://github.com/eckirchn/bin.git`. This private checkout is unchanged and still uses its existing origin.
+
 ## 24 October 2026, 3:24 AM MDT
 
 Only one machine needs the private beta. `sshkeygen` and `sshkeygen.ps1` are published at `https://github.com/eckirchn/sshkeygen`, which is public. Another machine clones that URL over HTTPS with no account and no SSH key. The black-frame scripts and `gitBinCreate` / `gitBinUpdate` stay in this private repo.

@@ -2,7 +2,7 @@
 
 Updated: 24 October 2026, 3:24 AM MDT
 
-Public copy, no login required: `https://github.com/eckirchn/sshkeygen`
+The same script is in the public bin repository: `https://github.com/eckirchn/bin`
 
 Makes one SSH key for one server, writes a `Host` block at the top of `~/.ssh/config`, and tries to install the public key.
 

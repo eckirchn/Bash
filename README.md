@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 3:24 AM MDT
+Updated: 24 October 2026, 3:32 AM MDT
 
 Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -25,17 +25,15 @@ gitBinUpdate
 
 Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinCreate.md](docs/gitBinCreate.md), [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
-This private repo is the beta copy. Only the machine that already has a GitHub key should pull it.
+This checkout is the private working copy. Other machines use the public clone below.
 
-### Public release
+### Public copy
 
-Other machines do not need a key. The public files are `sshkeygen` and `sshkeygen.ps1`:
+Every script and doc in this directory, except the PDF folder, is also here. No account and no SSH key:
 
 ```bash
-git clone https://github.com/eckirchn/sshkeygen.git
+git clone https://github.com/eckirchn/bin.git
 ```
-
-The black-frame scripts and `gitBinCreate` / `gitBinUpdate` are not in that public repo.
 
 ### SSH key for one server
 
