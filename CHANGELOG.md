@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 4:14 AM MDT
+
+The working repository is `eckirchn/Bash`. Further changes are committed there. `eckirchn/bin` is left as the public snapshot from 3:32 AM and is not updated unless that is requested. The Xeon checkout command is unchanged: `git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main`.
+
 ## 24 October 2026, 3:32 AM MDT
 
 The whole bin directory is public at `https://github.com/eckirchn/bin`. No account is required to clone it. That copy includes the scripts and the docs. It does not include the PDF folder, and it does not name that folder. `gitBinCreate` and `gitBinUpdate` in the public copy fetch `https://github.com/eckirchn/bin.git`. This private checkout is unchanged and still uses its existing origin.

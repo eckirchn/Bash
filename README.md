@@ -1,8 +1,8 @@
 # Bash scripts
 
-Updated: 24 October 2026, 3:32 AM MDT
+Updated: 24 October 2026, 4:14 AM MDT
 
-Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
+Private scripts. The working repository is [eckirchn/Bash](https://github.com/eckirchn/Bash). Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md). Changes are committed here. Nothing is published to another repository unless that is requested.
 
 ## Latest usage
 
@@ -25,14 +25,14 @@ gitBinUpdate
 
 Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinCreate.md](docs/gitBinCreate.md), [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
-This checkout is the private working copy. Other machines use the public clone below.
+This checkout is the private working copy.
 
 ### Public copy
 
-Every script and doc in this directory, except the PDF folder, is also here. No account and no SSH key:
+`eckirchn/bin` is an older public snapshot. It is not updated unless that is requested. To get this private repository:
 
 ```bash
-git clone https://github.com/eckirchn/bin.git
+git clone git@github.com:eckirchn/Bash.git
 ```
 
 ### SSH key for one server

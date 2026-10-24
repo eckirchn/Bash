@@ -1,8 +1,8 @@
 # sshkeygen
 
-Updated: 24 October 2026, 3:24 AM MDT
+Updated: 24 October 2026, 4:14 AM MDT
 
-The same script is in the public bin repository: `https://github.com/eckirchn/bin`
+The working copy of this script is in the private repository `eckirchn/Bash`.
 
 Makes one SSH key for one server, writes a `Host` block at the top of `~/.ssh/config`, and tries to install the public key.
 
