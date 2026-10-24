@@ -1,23 +1,25 @@
 # h265BlackFrameCompile
 
-Updated: 23 October 2026, 10:25 PM MDT
+Updated: 23 October 2026, 10:31 PM MDT
 
-Same job as `h264BlackFrameCompile`, with HEVC. It calls that script with `--hevc`.
+Same job as [h264BlackFrameCompile](h264BlackFrameCompile.md), with HEVC. It calls that script with `--hevc`.
+
+This is a companion to [h264BlackFrameExtract](h264BlackFrameExtract.md). That script detects the black frames and writes the previews. This script only encodes the previews you left in place.
 
 ## Run
 
 ```bash
 h265BlackFrameCompile
-h265BlackFrameCompile "/path/to/Name_work"
+h265BlackFrameCompile /path/to/MyClip_work
 ```
 
 Output, beside the source:
 
 ```text
-Name.h265.mp4
+MyClip.h265.mp4
 ```
 
-This does not replace `Name.h264.mp4`.
+This does not replace `MyClip.h264.mp4`.
 
 ## Encode
 

@@ -1,30 +1,37 @@
 # h264BlackFrameExtract
 
-Updated: 23 October 2026, 10:25 PM MDT
+Updated: 23 October 2026, 10:31 PM MDT
 
 Finds black frames used as cut points and writes low-quality previews so a person can decide what to keep.
+
+Companion scripts, used after this one:
+
+- [h264BlackFrameCompile](h264BlackFrameCompile.md) writes `MyClip.h264.mp4`
+- [h265BlackFrameCompile](h265BlackFrameCompile.md) writes `MyClip.h265.mp4`
+
+Both read the `lq_previews` folder this script creates. Run either one, or both. They do not replace each other.
 
 ## Run
 
 ```bash
-h264BlackFrameExtract /path/to/video.mp4
+h264BlackFrameExtract MyClip.mp4
 ```
 
 Needs `ffmpeg`, `ffprobe`, and `bc`.
 
 ## What it writes
 
-A `<name>_work/` folder next to the current directory:
+A `MyClip_work/` folder next to the current directory:
 
 | Path | What it is |
 |---|---|
-| `<name>.mp4` | Copy of the source. The original is not moved. |
+| `MyClip.mp4` | Copy of the source. The original is not moved. |
 | `lq_previews/` | 180p ultrafast CRF 28 previews, one file per segment |
-| `<name>_hq.sh` | Launcher. It runs `h264BlackFrameCompile` in this folder. |
-| `<name>_black.log` | `start end duration` of each black run |
-| `<name>_clips.log` | Clip id and `tStart` / `tStop` |
+| `MyClip_hq.sh` | Launcher. It runs [h264BlackFrameCompile](h264BlackFrameCompile.md) in this folder. |
+| `MyClip_black.log` | `start end duration` of each black run |
+| `MyClip_clips.log` | Clip id and `tStart` / `tStop` |
 
-Preview names look like `LQ_Clip007_001342.858183-010479.869400.mp4`. Those numbers are the cut list.
+Preview names look like `LQ_Clip003_000120.000000-000185.500000.mp4`. Those numbers are the cut list the compile scripts use.
 
 ## How a cut is chosen
 
@@ -42,4 +49,9 @@ Xeon E5-2680, 8 cores / 16 threads, no hardware encoder. FFmpeg uses every core 
 
 ## Next step
 
-Delete the previews you do not want. Then run `h264BlackFrameCompile` or `h265BlackFrameCompile` in the work folder.
+Delete the previews you do not want. Then run a companion compile in `MyClip_work`:
+
+```bash
+h264BlackFrameCompile
+h265BlackFrameCompile
+```
