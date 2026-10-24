@@ -1,44 +1,55 @@
 # Bash scripts
 
-Updated: 24 October 2026, 6:40 AM MDT
+Updated: 24 October 2026, 6:57 AM MDT
 
-Scripts for the Xeon. This repository is public. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
+Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
-## Latest usage
-
-### Install into `$HOME/bin`
+## Install (clone anywhere, copy what you need)
 
 ```bash
-git clone https://github.com/eckirchn/Bash.git "$HOME/bin"
+# Clone to a location of your choice
+git clone https://github.com/eckirchn/Bash.git
+cd Bash
+
+# Copy the scripts you want into a directory already on your PATH
+mkdir -p "$HOME/bin"
+cp sshkeygen "$HOME/bin/"
+# repeat for any other scripts you need
+chmod +x "$HOME/bin/"*
 ```
 
-No login. Does not change `~/.ssh`. If `$HOME/bin` is not already on `PATH`:
+If `$HOME/bin` is not on your `PATH`:
 
 ```bash
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
-### Later updates
+Alternatively, leave the clone where it is and add that directory to your `PATH`.
 
-After `$HOME/bin` is a checkout, `gitBinUpdate` keeps the origin URL already there. An SSH origin stays on SSH. It does not create a checkout.
+## Later updates (personal checkout in `$HOME/bin`)
+
+If you keep a full checkout in `$HOME/bin`:
 
 ```bash
 gitBinUpdate
 ```
 
-Repo files are replaced. A script that exists only in that `bin` directory is left alone. Details: [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
+Repo files are replaced. A script that exists only in that directory and is not in the repository is left alone. Details: [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
-### SSH key for one server
+## SSH key for one server
 
-`sshkeygen` is in this repository. After the install above:
+After the script is on your `PATH`:
 
 ```bash
 sshkeygen myserver
 ```
 
-From Windows PowerShell, in a checkout of this repository: `.\sshkeygen.ps1 myserver`. Details: [docs/sshkeygen.md](docs/sshkeygen.md).
+Details: [docs/sshkeygen.md](docs/sshkeygen.md).
 
-### Black frames
+Windows PowerShell companion (`sshkeygen.ps1`) is non-Bash and optional.
+
+## Black frames
 
 ```bash
 h264BlackFrameExtract MyClip.mp4
@@ -64,10 +75,8 @@ The batch script does not compile.
 |---|---|---|
 | `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
 | `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
-| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
+| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell (non-Bash) |
 | `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
 | `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) | `MyClip.h265.mp4` |
-
-Machine the video settings were chosen for: Intel Xeon E5-2680, 8 cores / 16 threads, Debian, no hardware video encoder.
