@@ -1,6 +1,6 @@
 # gitBinCreate
 
-Updated: 24 October 2026, 3:17 AM MDT
+Updated: 24 October 2026, 4:16 AM MDT
 
 First checkout of this repo into `$HOME/bin`. It runs [gitBinUpdate](gitBinUpdate.md).
 
@@ -36,7 +36,7 @@ Needs `git`.
 
 | Path | What happens |
 |---|---|
-| Files in the repo, such as `sshkeygen` | Written, replacing a local file of the same name |
+| Files in the repo, such as `blackframeextract` | Written, replacing a local file of the same name |
 | Files only on this machine | Left in place |
 | `$HOME/bin/.git` | Created if it was missing |
 | `~/.ssh` | Not touched |

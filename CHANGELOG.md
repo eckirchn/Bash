@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 4:16 AM MDT
+
+`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` were removed from this private repository and published at `https://github.com/eckirchn/sshkeygen`. No account is required to clone that repository. A later `git reset --hard` on the Xeon removes the old copies from `$HOME/bin` because they were tracked here. `eckirchn/bin` was not changed.
+
 ## 24 October 2026, 4:14 AM MDT
 
 The working repository is `eckirchn/Bash`. Further changes are committed there. `eckirchn/bin` is left as the public snapshot from 3:32 AM and is not updated unless that is requested. The Xeon checkout command is unchanged: `git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main`.
