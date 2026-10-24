@@ -1,4 +1,5 @@
 #!/bin/bash
+# Updated: 23 October 2026, 10:25 PM MDT
 # h264BlackFrameExtract — modernized for multi-threaded FFmpeg and command-line use
 # Goal: detect black-frame cut points, emit LQ preview clips for review,
 #       and generate a companion HQ script that re-uses the same timestamps

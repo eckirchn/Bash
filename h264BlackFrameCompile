@@ -1,4 +1,5 @@
 #!/bin/bash
+# Updated: 23 October 2026, 10:25 PM MDT
 # h264BlackFrameCompile / h265BlackFrameCompile
 # After reviewing lq_previews, delete the clips you do not want.
 # This script encodes whatever is still there, in clip order, into one file.
