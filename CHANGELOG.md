@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:14 AM MDT
+
+`h264BlackFrameCompile` and `h265BlackFrameCompile` wait before the first encode until CPU use stays under 80% for 10 seconds. The percent and the running count are printed on one line while it waits. A spike back to 80% or above resets the count. The sample is the whole machine, from `/proc/stat` (idle plus iowait against every other tick). The HEVC script still calls the H.264 script, so both paths wait. Encode settings are unchanged.
+
 ## 24 October 2026, 3:07 AM MDT
 
 `h264BlackFrameExtract` is now `blackframeextract`. The batch script is `blackframeextract-batch`. The old names are removed.

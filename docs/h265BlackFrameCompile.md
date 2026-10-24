@@ -1,6 +1,6 @@
 # h265BlackFrameCompile
 
-Updated: 24 October 2026, 3:07 AM MDT
+Updated: 24 October 2026, 3:14 AM MDT
 
 Same job as [h264BlackFrameCompile](h264BlackFrameCompile.md), with HEVC. It calls that script with `--hevc`.
 
@@ -10,10 +10,10 @@ This is a companion to [blackframeextract](blackframeextract.md). That script de
 
 ```bash
 h265BlackFrameCompile
-h265BlackFrameCompile /path/to/MyClip_work
+h265BlackFrameCompile /path/to/MyClip
 ```
 
-Output, beside the source:
+Before the first encode it waits until CPU use stays under 80% for 10 seconds, same as the H.264 compile, and prints the current percent while it waits. Output, beside the source:
 
 ```text
 MyClip.h265.mp4

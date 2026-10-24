@@ -1,6 +1,7 @@
 #!/bin/sh
-# Updated: 24 October 2026, 3:07 AM MDT
-# Same as h264BlackFrameCompile, but encodes HEVC (see that script for the settings).
+# Updated: 24 October 2026, 3:14 AM MDT
+# Same as h264BlackFrameCompile, but encodes HEVC.
+# The CPU wait (under 80% for 10 seconds) is in that script.
 here=$(dirname "$0")
 if [ -f "$here/h264BlackFrameCompile" ]; then
     exec "$here/h264BlackFrameCompile" --hevc "$@"

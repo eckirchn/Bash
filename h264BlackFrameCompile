@@ -1,5 +1,5 @@
 #!/bin/bash
-# Updated: 24 October 2026, 3:07 AM MDT
+# Updated: 24 October 2026, 3:14 AM MDT
 # h264BlackFrameCompile / h265BlackFrameCompile
 # After reviewing lq_previews, delete the clips you do not want.
 # This script encodes whatever is still there, in clip order, into one file.
@@ -10,7 +10,10 @@
 # work-directory is the folder blackframeextract made (MyClip/),
 # or an older MyClip_work folder. Default is the current directory.
 #
-# Output sits next to the source copy:
+# Before the first encode, both compiles wait until CPU use stays under 80%
+# for 10 seconds. A line on screen shows the current percent while it waits.
+#
+# Output sits next to the source:
 #   <name>.h264.mp4
 #   <name>.h265.mp4
 #
@@ -41,6 +44,41 @@ fi
 fnDie() {
     echo -e "${IRed}$*${ColorReset}" >&2
     exit 1
+}
+
+# Aggregate CPU from /proc/stat. Idle includes iowait. Returns "idle total".
+fnCpuSample() {
+    awk '/^cpu / { print $5+$6, $2+$3+$4+$5+$6+$7+$8+$9 }' /proc/stat
+}
+
+fnWaitForCpu() {
+    local limit=80
+    local need=10
+    local idle total prev_idle prev_total didle dtotal pct under=0
+    read -r prev_idle prev_total < <(fnCpuSample)
+    echo -e "${IYellow}Waiting until CPU stays under ${limit}% for ${need} seconds.${ColorReset}"
+    while (( under < need )); do
+        sleep 1
+        read -r idle total < <(fnCpuSample)
+        didle=$((idle - prev_idle))
+        dtotal=$((total - prev_total))
+        prev_idle=$idle
+        prev_total=$total
+        if (( dtotal > 0 )); then
+            pct=$(( (dtotal - didle) * 100 / dtotal ))
+        else
+            pct=0
+        fi
+        if (( pct < limit )); then
+            under=$((under + 1))
+        else
+            under=0
+        fi
+        printf '\r%sCPU %3d%% — under %d%% for %d of %d seconds%s   ' \
+            "$IYellow" "$pct" "$limit" "$under" "$need" "$ColorReset"
+    done
+    printf '\r%sCPU stayed under %d%% for %d seconds. Starting.%s\n' \
+        "$IGreen" "$limit" "$need" "$ColorReset"
 }
 
 for cmd in ffmpeg ffprobe bc; do
@@ -148,6 +186,8 @@ for row in "${ROWS[@]}"; do
     printf '  Clip %03d  %s -> %s  (%ss)\n' "$id" "$start" "$stop" "$len"
 done
 printf '  Total kept: %ss\n\n' "$total"
+
+fnWaitForCpu
 
 rm -rf "$SEGDIR"
 mkdir -p "$SEGDIR"

@@ -1,6 +1,6 @@
 # h264BlackFrameCompile
 
-Updated: 24 October 2026, 3:07 AM MDT
+Updated: 24 October 2026, 3:14 AM MDT
 
 Builds one H.264 file from the low-quality previews that are still in the work folder. A deleted preview is a cut you do not want. Timestamps come from the filename, not from how long the preview plays.
 
@@ -10,10 +10,10 @@ This is a companion to [blackframeextract](blackframeextract.md). That script de
 
 ```bash
 h264BlackFrameCompile
-h264BlackFrameCompile /path/to/MyClip_work
+h264BlackFrameCompile /path/to/MyClip
 ```
 
-The default directory is the current one. The source is `MyClip.mp4`, copied there by the extractor. Output, beside the source:
+The default directory is the current one. The source is `MyClip.mp4`, moved there by [blackframeextract](blackframeextract.md). Before the first encode, the script waits until CPU use stays under 80% for 10 seconds and prints the current percent while it waits. Output, beside the source:
 
 ```text
 MyClip.h264.mp4

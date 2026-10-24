@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 3:07 AM MDT
+Updated: 24 October 2026, 3:14 AM MDT
 
 Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -51,7 +51,7 @@ h264BlackFrameCompile
 h265BlackFrameCompile
 ```
 
-`blackframeextract` moves `MyClip.mp4` into `MyClip/MyClip.mp4`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the source. Either compile can be used. They do not overwrite each other. Older `MyClip_work` folders still compile.
+`blackframeextract` moves `MyClip.mp4` into `MyClip/MyClip.mp4`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the source. Either compile can be used. They do not overwrite each other. Older `MyClip_work` folders still compile. Both compiles wait until CPU use stays under 80% for 10 seconds before the first encode, and they print the current percent while they wait.
 
 To detect every source `.mp4` in a directory, one after another:
 
