@@ -10,8 +10,8 @@
 # Default is the current directory.
 #
 # Output sits next to the source copy:
-#   <name>.clean.mp4        (x264)
-#   <name>.clean.h265.mp4   (x265)
+#   <name>.h264.mp4
+#   <name>.h265.mp4
 #
 # E5-2680 (Sandy Bridge, 8c/16t, no hardware encoder). One encode at a time
 # so x264/x265 can use every thread.
@@ -52,7 +52,7 @@ LQDIR="$WORKDIR/lq_previews"
 
 fnFindSource() {
     local dir="$1"
-    local stem ext f
+    local stem ext f base
     stem=$(basename "$dir")
     stem=${stem%_work}
     for ext in mp4 mkv m4v mov ts avi mpg mpeg; do
@@ -65,7 +65,8 @@ fnFindSource() {
     local -a found=()
     shopt -s nullglob
     for f in "$dir"/*.{mp4,mkv,m4v,mov,ts,avi,mpg,mpeg}; do
-        [[ "$(basename "$f")" == *.clean.* ]] && continue
+        base=$(basename "$f")
+        [[ "$base" == *.clean.* || "$base" == *.h264.mp4 || "$base" == *.h265.mp4 ]] && continue
         found+=("$f")
     done
     shopt -u nullglob
@@ -87,7 +88,7 @@ if [[ "$CODEC" == hevc ]]; then
     CRF=20
     PRESET=medium
     LABEL="x265 main10 ${PRESET} CRF ${CRF}"
-    OUTPUT="$WORKDIR/${STEM}.clean.h265.mp4"
+    OUTPUT="$WORKDIR/${STEM}.h265.mp4"
     SEGDIR="$WORKDIR/hq_segments_h265"
     VCODEC=(
         -c:v libx265
@@ -102,7 +103,7 @@ else
     CRF=18
     PRESET=slow
     LABEL="x264 ${PRESET} tune film CRF ${CRF}"
-    OUTPUT="$WORKDIR/${STEM}.clean.mp4"
+    OUTPUT="$WORKDIR/${STEM}.h264.mp4"
     SEGDIR="$WORKDIR/hq_segments"
     VCODEC=(
         -c:v libx264

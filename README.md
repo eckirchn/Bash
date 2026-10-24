@@ -84,7 +84,7 @@ x264 settings (E5-2680, no hardware encoder): `preset slow`, `tune film`, CRF 18
 Output, next to the source:
 
 ```text
-Meet Joe Black (1998) 1080p STARZ SRC.clean.mp4
+Meet Joe Black (1998) 1080p STARZ SRC.h264.mp4
 ```
 
 Only clips still in `lq_previews` are included, in clip-number order. A partial preview still counts; delete it if that segment should be dropped.
@@ -103,9 +103,9 @@ x265 settings: `preset medium`, CRF 20, `main10` (10-bit 4:2:0), SAO off, `aq-mo
 Output:
 
 ```text
-Meet Joe Black (1998) 1080p STARZ SRC.clean.h265.mp4
+Meet Joe Black (1998) 1080p STARZ SRC.h265.mp4
 ```
 
-The two clean files do not overwrite each other.
+The two output files do not overwrite each other.
 
 

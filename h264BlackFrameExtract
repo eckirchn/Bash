@@ -192,7 +192,7 @@ fnEmitHQScript() {
     cat > "$hqscript" << 'EOF'
 #!/bin/sh
 # Delete the LQ previews you do not want, then run this.
-# It encodes the clips still in lq_previews into <source>.clean.mp4.
+# It encodes the clips still in lq_previews into <source>.h264.mp4.
 cd "$(dirname "$0")" || exit 1
 if ! command -v h264BlackFrameCompile >/dev/null 2>&1; then
     echo "h264BlackFrameCompile is not on PATH." >&2
