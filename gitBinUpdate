@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Updated: 24 October 2026, 2:55 AM MDT
+# Updated: 24 October 2026, 3:14 AM MDT
 # gitBinUpdate — put the Bash repo into $HOME/bin without deleting local scripts.
 #
 # Overwrites files that are in the repo. Leaves every other file in the
 # directory alone. Does not git clean, and does not reset --hard.
+# Does not read or write SSH keys or SSH config. Default remote is HTTPS,
+# so a key already on the machine is not used.
 # If $HOME/bin is not a checkout yet, this creates one.
 # gitBinCreate is the same job, for the first run.
 
@@ -17,8 +19,8 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261024_0255"
-DEFAULT_REMOTE="git@github.com:eckirchn/Bash.git"
+REV="20261024_0314"
+DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
 DEFAULT_BRANCH="main"
 
 die() {
@@ -28,7 +30,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  Update repo files in \$HOME/bin. Local-only scripts are left in place.${ColorReset}"
+    echo -e "${IPurple}  HTTPS checkout into \$HOME/bin. Does not touch SSH keys. Local-only scripts stay.${ColorReset}"
     echo
 }
 
@@ -41,13 +43,14 @@ Usage: gitBinUpdate [directory]
 If that directory is not a git checkout yet, this creates one and then
 writes the repo files. Files already there that are not in the repo are
 not removed. Files that are in the repo are replaced.
+Does not change SSH keys, SSH config, or git settings outside that directory.
+If the directory is already a checkout of a different remote, it stops.
 
-  GIT_BIN_REMOTE   Default: git@github.com:eckirchn/Bash.git
+  GIT_BIN_REMOTE   Default: https://github.com/eckirchn/Bash.git
   GIT_BIN_BRANCH   Default: main
 
 Examples:
   gitBinUpdate
-  GIT_BIN_REMOTE=https://github.com/eckirchn/Bash.git gitBinUpdate
   gitBinUpdate "$HOME/bin"
 EOF
 }
@@ -158,6 +161,16 @@ fnWriteRepoFiles() {
     git -C "$bin" reset --mixed "origin/${branch}" >/dev/null
 }
 
+fnGitFetch() {
+    local bin=$1 branch=$2
+    # Keep an https URL on https even if this machine rewrites GitHub URLs to SSH.
+    if [[ "$url" == https://* && "$url" =~ ^(https://[^/]+/[^/]+/) ]]; then
+        git -C "$bin" -c "url.${BASH_REMATCH[1]}.insteadOf=${BASH_REMATCH[1]}" fetch origin "$branch"
+        return
+    fi
+    git -C "$bin" fetch origin "$branch"
+}
+
 fnShowLocalFiles() {
     local bin=$1
     local line path shown=0 status
@@ -246,12 +259,14 @@ fnEnsureCheckout "$bin" "$url" "$branch"
 git -C "$bin" config core.autocrlf false
 
 echo -e "${IWhite}Fetching ${ICyan}${url}${IWhite} (${branch})${ColorReset}"
-if ! git -C "$bin" fetch origin "$branch"; then
+if [[ "$url" == https://* ]]; then
+    GIT_SSH_COMMAND='echo "Refusing SSH. This checkout stays on HTTPS so existing keys are not used." >&2; exit 1'
+    export GIT_SSH_COMMAND
+fi
+if ! fnGitFetch "$bin" "$branch"; then
     echo -e "${IRed}Could not fetch.${ColorReset}" >&2
-    echo -e "${IWhite}This is a private repo, so this machine has to be allowed in.${ColorReset}" >&2
-    echo -e "${IYellow}  ssh -T git@github.com${ColorReset}" >&2
-    echo -e "${IWhite}Or use HTTPS:${ColorReset}" >&2
-    echo -e "${IYellow}  GIT_BIN_REMOTE=https://github.com/eckirchn/Bash.git gitBinUpdate${ColorReset}" >&2
+    echo -e "${IWhite}No SSH key was used. For a private repo, git asks for the GitHub username${ColorReset}" >&2
+    echo -e "${IWhite}and a personal access token as the password. The account password will not work.${ColorReset}" >&2
     exit 1
 fi
 

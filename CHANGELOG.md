@@ -4,17 +4,7 @@ Times are Mountain Time. Each entry is one revision on `main`.
 
 ## 24 October 2026, 3:14 AM MDT
 
-`h264BlackFrameCompile` and `h265BlackFrameCompile` wait before the first encode until CPU use stays under 80% for 10 seconds. The percent and the running count are printed on one line while it waits. A spike back to 80% or above resets the count. The sample is the whole machine, from `/proc/stat` (idle plus iowait against every other tick). The HEVC script still calls the H.264 script, so both paths wait. Encode settings are unchanged.
-
-## 24 October 2026, 3:07 AM MDT
-
-`h264BlackFrameExtract` is now `blackframeextract`. The batch script is `blackframeextract-batch`. The old names are removed.
-
-The source file is moved, not copied. `MyClip.mp4` becomes `MyClip/MyClip.mp4`. The folder is the source name. New runs do not add `_work`. A file already inside that folder is left in place. Older `MyClip_work` folders still compile.
-
-Black detection skips B-frames (`-skip_frame bidir`) and measures black on a 160-pixel-wide picture, with all 16 threads. Commercial blacks are long enough to remain visible. A black of only a frame or two can be missed. Previews are 288p, still `ultrafast`, CRF 26, so a segment is easier to recognize without a 720p encode. Storage stays small next to the source. The final H.264 and H.265 compile settings are unchanged.
-
-Docs for the extractor and both compile scripts point at each other. Examples use `MyClip`.
+`gitBinCreate` and `gitBinUpdate` no longer default to `git@github.com`. On BirdNet, an SSH clone was refused with `Permission denied (publickey)`. That Pi may already have a GitHub key from the BirdNET-Pi install. These scripts do not call `ssh-keygen`, do not write `~/.ssh`, and do not add a `Host github.com` block. The default URL is `https://github.com/eckirchn/Bash.git`. An https URL is pinned so a global rewrite to SSH does not catch it, and an https fetch will not run `ssh`. A private fetch asks for the GitHub login and a personal access token. Local-only files in `bin` are still left in place. A directory that already tracks a different remote is still refused.
 
 ## 24 October 2026, 2:55 AM MDT
 

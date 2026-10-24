@@ -13,11 +13,11 @@ Private scripts. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGE
 First time, from a temp clone:
 
 ```bash
-git clone git@github.com:eckirchn/Bash.git /tmp/Bash
+git clone https://github.com/eckirchn/Bash.git /tmp/Bash
 /tmp/Bash/gitBinCreate
 ```
 
-After that:
+Git asks for the GitHub login and a personal access token. It does not use an SSH key, and it does not change `~/.ssh`. After that:
 
 ```bash
 gitBinUpdate
@@ -44,22 +44,22 @@ That writes `~/.ssh/id_ed25519.myserver` and a `Host myserver` block. Fedora, Ub
 ### Black frames
 
 ```bash
-blackframeextract MyClip.mp4
-cd MyClip
+h264BlackFrameExtract MyClip.mp4
+cd MyClip_work
 # delete the lq_previews you do not want, then:
 h264BlackFrameCompile
 h265BlackFrameCompile
 ```
 
-`blackframeextract` moves `MyClip.mp4` into `MyClip/MyClip.mp4`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the source. Either compile can be used. They do not overwrite each other. Older `MyClip_work` folders still compile. Both compiles wait until CPU use stays under 80% for 10 seconds before the first encode, and they print the current percent while they wait.
+`h264BlackFrameExtract` writes `MyClip_work/`. The two compile scripts are companions of that extractor. They read the previews you left behind and write `MyClip.h264.mp4` or `MyClip.h265.mp4` next to the copied source. Either compile can be used. They do not overwrite each other.
 
-To detect every source `.mp4` in a directory, one after another:
+To detect every `.mp4` in a directory, one after another:
 
 ```bash
-blackframeextract-batch
+h264BlackFrameExtract-batch
 ```
 
-The batch script does not compile. It skips files already named `.h264.mp4` or `.h265.mp4`.
+The batch script does not compile.
 
 ## Scripts
 
@@ -69,8 +69,8 @@ The batch script does not compile. It skips files already named `.h264.mp4` or `
 | `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
 | `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block |
 | `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
-| `blackframeextract` | [docs/blackframeextract.md](docs/blackframeextract.md) | `MyClip/` with the source moved in, plus previews |
-| `blackframeextract-batch` | [docs/blackframeextract-batch.md](docs/blackframeextract-batch.md) | one folder per source `.mp4` |
+| `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
+| `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) | `MyClip.h265.mp4` |
 
