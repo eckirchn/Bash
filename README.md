@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 7:12 AM MDT
+Updated: 24 October 2026, 7:15 AM MDT
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -27,11 +27,38 @@ cd $HOME/Bash
 ./sshkeygen myserver
 ```
 
-If you prefer the scripts on your `PATH`, copy the ones you want into a directory that is already on it (commonly `$HOME/bin`) and `chmod +x` them. That step is optional.
+## Optional: symbolic links into `$HOME/bin`
+
+If you want the scripts on your `PATH` and also want `git pull` to update them automatically, link instead of copy:
+
+```bash
+mkdir -p "$HOME/bin"
+cd "$HOME/bin"
+
+# Link every executable script from the clone (adjust the path)
+for s in "$HOME/Bash"/*; do
+  [ -f "$s" ] && [ -x "$s" ] && ln -sf "$s" .
+done
+```
+
+Or link only the ones you care about:
+
+```bash
+cd "$HOME/bin"
+ln -sf "$HOME/Bash/sshkeygen" .
+ln -sf "$HOME/Bash/h264BlackFrameCompile" .
+```
+
+After a `git pull` inside `$HOME/Bash` the linked names in `$HOME/bin` continue to point at the updated files. No re-copy needed.
 
 ## Later updates
 
-If you keep a checkout in `$HOME/bin` you can refresh it with `gitBinUpdate`. Otherwise just `git pull` inside your clone.
+```bash
+cd "$HOME/Bash"
+git pull
+```
+
+If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`.
 
 ## Examples
 
