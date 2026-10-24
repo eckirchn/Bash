@@ -1,12 +1,12 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 3:17 AM MDT
+Updated: 24 October 2026, 3:19 AM MDT
 
 Writes the current repo files into `$HOME/bin`. Files that are not in the repo are left in place.
 
 If `$HOME/bin` is not a checkout yet, this does the same job as [gitBinCreate](gitBinCreate.md) and the new origin is HTTPS.
 
-If the checkout already has an origin, that URL is kept. On the machine where `git@github.com:eckirchn/Bash.git` already fetches, this keeps using it. The script does not switch that remote to HTTPS, and it does not block SSH.
+A BirdNet machine that has never had a GitHub key added to the account fails SSH with `Permission denied (publickey)`. That is not fixed here. A new checkout on that machine still uses HTTPS and a personal access token. An existing SSH checkout, such as the Xeon, is left on SSH.
 
 It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
 

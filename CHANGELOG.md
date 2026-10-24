@@ -2,6 +2,12 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 3:19 AM MDT
+
+The Xeon checkout fetched `8efec67` over SSH with `git fetch` and `reset --hard`. That machine already had a GitHub key. `gitBinUpdate` can keep using that origin.
+
+The BirdNet failure `Permission denied (publickey)` happens before GitHub looks at the repo. No offered key was accepted. A missing key, or a key that was never added to the GitHub account, is enough. A private repo does not by itself produce that message: a key GitHub accepts, but which cannot see the repo, usually gets `Repository not found` instead. Nothing has to be changed on the Pi unless that machine should fetch this repo. `~/.ssh` is still not written by these scripts.
+
 ## 24 October 2026, 3:17 AM MDT
 
 `gitBinUpdate` on the Xeon failed after `adf6a34`. That checkout's origin was still `git@github.com:eckirchn/Bash.git`, and a plain `git fetch` over SSH succeeded. The script then set `GIT_SSH_COMMAND` to refuse SSH because its default URL is HTTPS, so the fetch died with `Refusing SSH` and `Could not fetch`.
