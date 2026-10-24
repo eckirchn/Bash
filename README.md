@@ -77,7 +77,9 @@ Or pass the work directory:
 h264BlackFrameCompile "/path/Meet Joe Black (1998) 1080p STARZ SRC_work"
 ```
 
-Reads timestamps from each `lq_previews/LQ_ClipNNN_<start>-<stop>.mp4`. Encodes those ranges from the source video sitting in the same folder (`x264` medium, CRF 18, audio copied, one clip at a time, `-threads 0`), then joins them.
+Reads timestamps from each `lq_previews/LQ_ClipNNN_<start>-<stop>.mp4`. Encodes those ranges from the source video in the same folder, one clip at a time, then joins them. Audio is copied.
+
+x264 settings (E5-2680, no hardware encoder): `preset slow`, `tune film`, CRF 18, high profile, 8-bit 4:2:0, BT.709. `slow` is the useful quality step on this CPU. `veryslow` costs a lot of time for almost nothing.
 
 Output, next to the source:
 
@@ -85,5 +87,25 @@ Output, next to the source:
 Meet Joe Black (1998) 1080p STARZ SRC.clean.mp4
 ```
 
-Only clips still in `lq_previews` are included, in clip-number order. A partial preview still counts; delete it if that segment should be dropped. `CRF` and `PRESET` are at the top of the script.
+Only clips still in `lq_previews` are included, in clip-number order. A partial preview still counts; delete it if that segment should be dropped.
+
+## h265BlackFrameCompile
+
+Same inputs as `h264BlackFrameCompile`. Different encoder.
+
+```bash
+h265BlackFrameCompile
+h265BlackFrameCompile "/path/Meet Joe Black (1998) 1080p STARZ SRC_work"
+```
+
+x265 settings: `preset medium`, CRF 20, `main10` (10-bit 4:2:0), SAO off, `aq-mode=3`, stronger psy, `hvc1` tag, BT.709. CRF 20 is about the same picture as the x264 CRF 18 file and smaller. `medium` is the preset that will actually finish on this Xeon; `slow` is often 1–3 fps at 1080p.
+
+Output:
+
+```text
+Meet Joe Black (1998) 1080p STARZ SRC.clean.h265.mp4
+```
+
+The two clean files do not overwrite each other.
+
 

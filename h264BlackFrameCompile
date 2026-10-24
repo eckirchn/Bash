@@ -1,19 +1,26 @@
 #!/bin/bash
-# h264BlackFrameCompile
+# h264BlackFrameCompile / h265BlackFrameCompile
 # After reviewing lq_previews, delete the clips you do not want.
 # This script encodes whatever is still there, in clip order, into one file.
 #
 #   h264BlackFrameCompile [work-directory]
+#   h265BlackFrameCompile [work-directory]
 #
 # work-directory is the *_work folder from h264BlackFrameExtract.
 # Default is the current directory.
 #
-# Source is the video copied into that folder
-#   (Meet Joe Black (1998) 1080p STARZ SRC_work/Meet Joe Black ....mp4).
-# Output is the same name with .clean.mp4 in that same folder.
+# Output sits next to the source copy:
+#   <name>.clean.mp4        (x264)
+#   <name>.clean.h265.mp4   (x265)
 #
-# Only files present in lq_previews are kept. A missing clip is a deleted clip.
-# Timestamps come from the filename, not from how long the preview plays.
+# E5-2680 (Sandy Bridge, 8c/16t, no hardware encoder). One encode at a time
+# so x264/x265 can use every thread.
+#
+# x264: preset slow, tune film, CRF 18, high profile, 8-bit.
+#   slow is the quality/time knee on this CPU. veryslow is not worth it.
+# x265: preset medium, CRF 20, main10, SAO off, aq-mode 3.
+#   CRF 20 is about the same picture as x264 CRF 18, in fewer bits.
+#   10-bit avoids banding. medium is the usable preset here; slow is ~1-3 fps.
 
 set -euo pipefail
 
@@ -24,8 +31,11 @@ ICyan='\033[0;96m'
 IGreen='\033[0;92m'
 IRed='\033[0;91m'
 
-CRF=18
-PRESET=medium
+CODEC=h264
+if [[ "${1:-}" == "--hevc" || "${1:-}" == "--h265" ]]; then
+    CODEC=hevc
+    shift
+fi
 
 fnDie() {
     echo -e "${IRed}$*${ColorReset}" >&2
@@ -72,8 +82,37 @@ fnFindSource() {
 SOURCE=$(fnFindSource "$WORKDIR")
 STEM=$(basename "$SOURCE")
 STEM=${STEM%.*}
-OUTPUT="$WORKDIR/${STEM}.clean.mp4"
-SEGDIR="$WORKDIR/hq_segments"
+
+if [[ "$CODEC" == hevc ]]; then
+    CRF=20
+    PRESET=medium
+    LABEL="x265 main10 ${PRESET} CRF ${CRF}"
+    OUTPUT="$WORKDIR/${STEM}.clean.h265.mp4"
+    SEGDIR="$WORKDIR/hq_segments_h265"
+    VCODEC=(
+        -c:v libx265
+        -preset "$PRESET"
+        -crf "$CRF"
+        -pix_fmt yuv420p10le
+        -profile:v main10
+        -tag:v hvc1
+        -x265-params "aq-mode=3:qg-size=32:psy-rd=2.0:psy-rdoq=1.0:rdoq-level=2:deblock=-1,-1:sao=0:strong-intra-smoothing=0:bframes=6:rc-lookahead=40:ref=4"
+    )
+else
+    CRF=18
+    PRESET=slow
+    LABEL="x264 ${PRESET} tune film CRF ${CRF}"
+    OUTPUT="$WORKDIR/${STEM}.clean.mp4"
+    SEGDIR="$WORKDIR/hq_segments"
+    VCODEC=(
+        -c:v libx264
+        -preset "$PRESET"
+        -tune film
+        -crf "$CRF"
+        -profile:v high
+        -pix_fmt yuv420p
+    )
+fi
 
 ROWS_FILE=$(mktemp)
 trap 'rm -f "$ROWS_FILE"' EXIT
@@ -97,7 +136,7 @@ fi
 
 echo -e "${IWhite}Source:${ColorReset}  $SOURCE"
 echo -e "${IWhite}Output:${ColorReset}  $OUTPUT"
-echo -e "${IWhite}Keeping ${ICyan}${#ROWS[@]}${IWhite} clip(s), x264 ${PRESET} CRF ${CRF}, one encode at a time${ColorReset}"
+echo -e "${IWhite}Keeping ${ICyan}${#ROWS[@]}${IWhite} clip(s), ${LABEL}, one encode at a time${ColorReset}"
 
 total=0
 for row in "${ROWS[@]}"; do
@@ -131,12 +170,12 @@ for row in "${ROWS[@]}"; do
         -ss "$prestart" -i "$SOURCE" -ss "$acc" -t "$len" \
         -threads 0 \
         -map 0:v:0 -map 0:a? \
-        -c:v libx264 -preset "$PRESET" -crf "$CRF" -pix_fmt yuv420p \
+        "${VCODEC[@]}" \
+        -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
         -c:a copy \
         -avoid_negative_ts make_zero \
         -movflags +faststart \
         -y "$seg"
-    # concat demuxer wants a single-quoted path; escape any quote in the name
     escaped=${seg//\'/\'\\\'\'}
     printf "file '%s'\n" "$escaped" >> "$LIST"
 done
