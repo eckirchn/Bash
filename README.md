@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 7:15 AM MDT
+Updated: 24 October 2026, 7:17 AM MDT
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -63,18 +63,11 @@ If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`.
 ## Examples
 
 ```bash
-# SSH key (run on the client)
 ./sshkeygen myserver
-
-# Black frames
 ./h264BlackFrameExtract MyClip.mp4
-cd MyClip_work
-# remove the previews you do not want, then:
-./h264BlackFrameCompile
-./h265BlackFrameCompile
 ```
 
-See the individual files under `docs/` for more detail on each script.
+Detailed steps (preview folders, which clips to keep, compile options, etc.) are in the individual files under `docs/`.
 
 ## Scripts
 
