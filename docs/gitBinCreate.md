@@ -1,6 +1,6 @@
 # gitBinCreate
 
-Updated: 24 October 2026, 4:19 AM MDT
+Updated: 24 October 2026, 4:22 AM MDT
 
 First checkout of this repo into `$HOME/bin`. It runs [gitBinUpdate](gitBinUpdate.md).
 
@@ -15,16 +15,7 @@ git clone https://github.com/eckirchn/Bash.git /tmp/Bash
 /tmp/Bash/gitBinCreate
 ```
 
-The repo is private. When git asks:
-
-| Prompt | What to type |
-|---|---|
-| Username | The GitHub login |
-| Password | A personal access token for this repo. Not the GitHub account password. |
-
-On GitHub: Settings, Developer settings, Personal access tokens. A fine-grained token can be limited to this one repo, with Contents set to read. A classic token needs the `repo` scope.
-
-Needs `git`.
+No login is required. Needs `git`.
 
 | Machine | Install |
 |---|---|

@@ -1,12 +1,12 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 4:19 AM MDT
+Updated: 24 October 2026, 4:22 AM MDT
 
 Writes the current repo files into `$HOME/bin`. Files that are not in the repo are left in place.
 
 If `$HOME/bin` is not a checkout yet, this does the same job as [gitBinCreate](gitBinCreate.md) and the new origin is HTTPS.
 
-A BirdNet machine that has never had a GitHub key added to the account fails SSH with `Permission denied (publickey)`. That is not fixed here. A new checkout on that machine still uses HTTPS and a personal access token. An existing SSH checkout, such as the Xeon, is left on SSH.
+A new checkout uses `https://github.com/eckirchn/Bash.git`. No login is required. An existing SSH checkout, such as the Xeon, is left on SSH.
 
 It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
 
@@ -36,7 +36,3 @@ gitBinUpdate "$HOME/bin"
 | Take over a checkout that tracks a different remote | No. It stops. |
 
 A file removed from the repo on GitHub is also left on disk. It is no longer tracked. Delete it yourself if you do not want it.
-
-## If git asks for a password
-
-Username is the GitHub login. Password is a personal access token, not the account password. A fine-grained token can be limited to this repo with Contents set to read.

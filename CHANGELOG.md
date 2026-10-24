@@ -2,6 +2,16 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 4:22 AM MDT
+
+`eckirchn/Bash` is public. Anyone can clone it with no account and no SSH key:
+
+```bash
+git clone https://github.com/eckirchn/Bash.git
+```
+
+The PDF folder was removed from the current tree before the repository was made public. Older commits still contain that folder. `gitBinCreate` and `gitBinUpdate` no longer ask for a token.
+
 ## 24 October 2026, 4:19 AM MDT
 
 `sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` are back in this repository. Removing them was wrong. They stay in `eckirchn/Bash`. A private repository cannot mark one file public, so the only public copy is `https://github.com/eckirchn/sshkeygen`. No other script from Bash is published there. `eckirchn/bin` was not changed.
@@ -56,7 +66,7 @@ The new script keeps a separate key per host, `id_ed25519.<alias>` unless `-t rs
 
 ## 23 October 2026, 10:31 PM MDT
 
-Documentation cross-links. The extractor doc names both compile scripts as companions. Each compile doc links back to `h264BlackFrameExtract`. Examples use `MyClip` instead of a real recording name. The executive summary moved to `GROK/PDF/20261023_2223-Executive-Summary-Black-Frame-Workflow.pdf`.
+Documentation cross-links. The extractor doc names both compile scripts as companions. Each compile doc links back to `h264BlackFrameExtract`. Examples use `MyClip` instead of a real recording name.
 
 ## 23 October 2026, 10:26 PM MDT
 
