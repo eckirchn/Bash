@@ -2,6 +2,16 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 6:40 AM MDT
+
+The install is one command:
+
+```bash
+git clone https://github.com/eckirchn/Bash.git "$HOME/bin"
+```
+
+The empty-directory steps and the `git init` / `remote add` / `fetch` / `checkout` steps are gone. No login. `~/.ssh` is not changed. Later updates are still `gitBinUpdate`.
+
 ## 24 October 2026, 6:22 AM MDT
 
 Removed `gitBinCreate` and `docs/gitBinCreate.md`. The first install into `$HOME/bin` is git commands in the README, not a script. An empty directory is `git clone '<repository-url>' "$HOME/bin"`. A directory that already has local scripts is `git init`, `remote add origin`, `fetch`, and `checkout` of the tracked paths, so those local scripts stay. Nothing in those commands names a GitHub login.

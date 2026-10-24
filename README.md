@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 6:22 AM MDT
+Updated: 24 October 2026, 6:40 AM MDT
 
 Scripts for the Xeon. This repository is public. Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -8,30 +8,14 @@ Scripts for the Xeon. This repository is public. Checked out at `$HOME/bin`. His
 
 ### Install into `$HOME/bin`
 
-No helper script. Use git. No login is required. These commands do not change `~/.ssh`.
-
-Empty directory:
-
 ```bash
-git clone '<repository-url>' "$HOME/bin"
+git clone https://github.com/eckirchn/Bash.git "$HOME/bin"
 ```
 
-`$HOME/bin` already has local scripts. Those files stay. Files that are in the repository are replaced.
+No login. Does not change `~/.ssh`. If `$HOME/bin` is not already on `PATH`:
 
 ```bash
-cd "$HOME/bin"
-git init -b main
-git remote add origin '<repository-url>'
-git fetch origin main
-git checkout -f origin/main -- .
-git reset --mixed origin/main
-```
-
-`<repository-url>` is the clone URL for this repository. Put `$HOME/bin` on `PATH` if it is not already:
-
-```bash
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 ### Later updates

@@ -1,33 +1,20 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 6:22 AM MDT
+Updated: 24 October 2026, 6:40 AM MDT
 
 Refreshes repo files in a `$HOME/bin` that is already a checkout. Files that are not in the repo are left in place.
 
-It does not create a checkout. The first install is the git commands in the [README](../README.md). The origin URL already set is kept. An SSH checkout stays on SSH.
+It does not create a checkout. The origin URL already set is kept. An SSH checkout stays on SSH.
 
 It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
 
 ## Install
 
-Empty directory:
-
 ```bash
-git clone '<repository-url>' "$HOME/bin"
+git clone https://github.com/eckirchn/Bash.git "$HOME/bin"
 ```
 
-Directory that already has local scripts:
-
-```bash
-cd "$HOME/bin"
-git init -b main
-git remote add origin '<repository-url>'
-git fetch origin main
-git checkout -f origin/main -- .
-git reset --mixed origin/main
-```
-
-`<repository-url>` is the clone URL for this repository. No login is required while the repository is public. Needs `git`.
+No login. Needs `git`.
 
 | Machine | Install |
 |---|---|
