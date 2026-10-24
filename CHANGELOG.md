@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 October 2026, 4:19 AM MDT
+
+`sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` are back in this repository. Removing them was wrong. They stay in `eckirchn/Bash`. A private repository cannot mark one file public, so the only public copy is `https://github.com/eckirchn/sshkeygen`. No other script from Bash is published there. `eckirchn/bin` was not changed.
+
 ## 24 October 2026, 4:16 AM MDT
 
 `sshkeygen`, `sshkeygen.ps1`, `docs/sshkeygen.md`, and `archive/sshkeygen-20190126` were removed from this private repository and published at `https://github.com/eckirchn/sshkeygen`. No account is required to clone that repository. A later `git reset --hard` on the Xeon removes the old copies from `$HOME/bin` because they were tracked here. `eckirchn/bin` was not changed.

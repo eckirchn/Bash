@@ -1,0 +1,601 @@
+#!/usr/bin/env bash
+# Updated: 24 October 2026, 2:36 AM MDT
+# sshkeygen — per-host SSH key, client config, and one install attempt.
+#
+# Clients: current Fedora, Ubuntu, Raspberry Pi OS, and Git Bash on Windows.
+# Servers: current Fedora, Ubuntu, and Raspberry Pi OS.
+# Native Windows PowerShell: sshkeygen.ps1
+#
+# Changes from the 2019-01-26 script (archive/sshkeygen-20190126):
+#   - no fpaste requirement (that package is not on Ubuntu or Raspberry Pi OS)
+#   - ed25519 by default; RSA 4096 only with -t rsa
+#   - $HOME/.ssh, not /home/$USER
+#   - IdentitiesOnly, so extra default keys are not offered
+#   - new Host block is written at the top of ~/.ssh/config
+#   - passphrase prompt unless --empty-passphrase or -N is set
+#   - does not tell sshd to set UsePAM no
+
+set -euo pipefail
+
+ColorReset='\033[0m'
+IWhite='\033[0;97m'
+IYellow='\033[0;93m'
+ICyan='\033[0;96m'
+IGreen='\033[0;92m'
+IRed='\033[0;91m'
+IPurple='\033[0;95m'
+
+REV="20261024_0236"
+
+die() {
+    echo -e "${IRed}$*${ColorReset}" >&2
+    exit 1
+}
+
+fnDisplayRevision() {
+    echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
+    echo -e "${IPurple}  ed25519, Fedora / Ubuntu / Raspberry Pi OS, Git Bash; Windows native is sshkeygen.ps1${ColorReset}"
+    echo
+}
+
+usage() {
+    cat <<'EOF'
+Usage: sshkeygen [options] <host> [remote-user]
+
+  host            Server name or address. myuser@myserver is allowed.
+  remote-user     Account on the server. Default: your local user name.
+
+Options:
+  -a, --alias NAME       Host alias in ~/.ssh/config (default: the host)
+  -p, --port PORT        Remote SSH port (default: 22)
+  -t, --type TYPE        ed25519 (default) or rsa
+  -c, --comment TEXT     Key comment (default: localuser@thishost)
+  -u, --user NAME        Same as remote-user
+  -N, --passphrase TEXT  Set a passphrase. Prefer the prompt instead.
+      --empty-passphrase No passphrase (the 2019 behavior)
+      --no-copy          Write the key and config only. Do not contact the server.
+  -h, --help
+
+Examples:
+  sshkeygen myserver
+  sshkeygen -u myuser myserver
+  sshkeygen -a pishelf -u myuser 192.168.1.20
+  sshkeygen --empty-passphrase -t rsa myserver
+EOF
+}
+
+fnClientFamily() {
+    local uname_s id
+    uname_s=$(uname -s 2>/dev/null || echo unknown)
+    case "$uname_s" in
+        MINGW*|MSYS*|CYGWIN*)
+            echo windows
+            return
+            ;;
+    esac
+    if [[ -r /etc/os-release ]]; then
+        id=$(awk -F= '$1=="ID" { gsub(/"/, "", $2); print $2; exit }' /etc/os-release)
+        case "$id" in
+            fedora|rhel|centos|almalinux|rocky)
+                echo fedora
+                return
+                ;;
+            ubuntu)
+                echo ubuntu
+                return
+                ;;
+            raspbian)
+                echo raspberrypi
+                return
+                ;;
+            debian)
+                if [[ -f /etc/rpi-issue ]]; then
+                    echo raspberrypi
+                    return
+                fi
+                if [[ -f /proc/device-tree/model ]] && grep -qi raspberry /proc/device-tree/model 2>/dev/null; then
+                    echo raspberrypi
+                    return
+                fi
+                echo debian
+                return
+                ;;
+        esac
+    fi
+    case "$uname_s" in
+        Linux) echo linux ;;
+        Darwin) echo macos ;;
+        *) echo other ;;
+    esac
+}
+
+fnInstallHint() {
+    case "$(fnClientFamily)" in
+        fedora)
+            echo "sudo dnf install openssh-clients"
+            ;;
+        ubuntu|debian|raspberrypi)
+            echo "sudo apt update && sudo apt install openssh-client"
+            ;;
+        windows)
+            echo "Install the Windows OpenSSH Client feature, then use sshkeygen.ps1 in PowerShell."
+            ;;
+        macos)
+            echo "Install OpenSSH (ssh and ssh-keygen are part of the system command-line tools)."
+            ;;
+        *)
+            echo "Install OpenSSH. Fedora: sudo dnf install openssh-clients. Ubuntu, Debian, Raspberry Pi OS: sudo apt install openssh-client."
+            ;;
+    esac
+}
+
+fnDepCheck() {
+    local need_ssh=$1
+    echo -e "${IWhite}Dependency check${ColorReset}"
+    if command -v ssh-keygen >/dev/null 2>&1; then
+        echo -e "  ssh-keygen: ${IGreen}OK${ColorReset}"
+    else
+        echo -e "  ${IRed}missing: ssh-keygen${ColorReset}"
+        echo -e "  Install: ${IYellow}$(fnInstallHint)${ColorReset}"
+        exit 1
+    fi
+    if [[ "$need_ssh" -eq 0 ]]; then
+        echo
+        return 0
+    fi
+    if command -v ssh >/dev/null 2>&1; then
+        echo -e "  ssh: ${IGreen}OK${ColorReset}"
+    else
+        echo -e "  ${IRed}missing: ssh${ColorReset}"
+        echo -e "  Install: ${IYellow}$(fnInstallHint)${ColorReset}"
+        exit 1
+    fi
+    if command -v ssh-copy-id >/dev/null 2>&1; then
+        echo -e "  ssh-copy-id: ${IGreen}OK${ColorReset}"
+    else
+        echo -e "  ssh-copy-id: ${IYellow}not installed, will use ssh${ColorReset}"
+    fi
+    echo
+}
+
+fnValidName() {
+    [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,253}$ ]]
+}
+
+fnValidUser() {
+    [[ "$1" =~ ^[A-Za-z_][A-Za-z0-9._-]{0,31}$ ]]
+}
+
+fnShQuote() {
+    local s=$1
+    local escaped
+    escaped=$(printf '%s' "$s" | sed "s/'/'\\\\''/g")
+    printf "'%s'" "$escaped"
+}
+
+fnWriteBlock() {
+    local dest=$1 alias=$2 hostname=$3 user=$4 port=$5 ident=$6
+    {
+        printf '# BEGIN sshkeygen %s\n' "$alias"
+        printf 'Host %s\n' "$alias"
+        printf '  HostName %s\n' "$hostname"
+        printf '  User %s\n' "$user"
+        if [[ "$port" != "22" ]]; then
+            printf '  Port %s\n' "$port"
+        fi
+        printf '  IdentityFile %s\n' "$ident"
+        printf '  IdentitiesOnly yes\n'
+        printf '# END sshkeygen %s\n' "$alias"
+    } >"$dest"
+}
+
+fnHasMarkerLine() {
+    local file=$1 needle=$2
+    [[ -f "$file" ]] || return 1
+    awk -v needle="$needle" '
+        {
+            sub(/\r$/, "")
+        }
+        $0 == needle { found = 1 }
+        END { exit found ? 0 : 1 }
+    ' "$file"
+}
+
+fnHostListedOutsideBlock() {
+    local file=$1 alias=$2
+    local begin end
+    begin="# BEGIN sshkeygen ${alias}"
+    end="# END sshkeygen ${alias}"
+    [[ -f "$file" ]] || return 1
+    awk -v alias="$alias" -v begin="$begin" -v end="$end" '
+        {
+            sub(/\r$/, "")
+        }
+        $0 == begin { skip = 1; next }
+        skip && $0 == end { skip = 0; next }
+        skip { next }
+        $1 == "Host" {
+            for (i = 2; i <= NF; i++) if ($i == alias) hit = 1
+        }
+        END { exit hit ? 0 : 1 }
+    ' "$file"
+}
+
+fnUpsertConfig() {
+    local file=$1 alias=$2 blockfile=$3
+    local begin end tmp
+    begin="# BEGIN sshkeygen ${alias}"
+    end="# END sshkeygen ${alias}"
+    tmp=$(mktemp)
+    if fnHasMarkerLine "$file" "$begin"; then
+        if ! fnHasMarkerLine "$file" "$end"; then
+            rm -f "$tmp"
+            die "SSH config has ${begin} but no matching end marker. Fix ${file} by hand."
+        fi
+        cp -p "$file" "${file}.bak"
+        chmod 600 "${file}.bak" || true
+        awk -v begin="$begin" -v end="$end" -v bfile="$blockfile" '
+            BEGIN {
+                repl = ""
+                while ((getline line < bfile) > 0) {
+                    sub(/\r$/, "", line)
+                    repl = repl line ORS
+                }
+                close(bfile)
+                skip = 0
+            }
+            {
+                sub(/\r$/, "")
+            }
+            $0 == begin {
+                printf "%s", repl
+                skip = 1
+                next
+            }
+            skip && $0 == end { skip = 0; next }
+            skip { next }
+            { print }
+        ' "$file" >"$tmp"
+    else
+        if [[ -f "$file" ]]; then
+            cp -p "$file" "${file}.bak"
+            chmod 600 "${file}.bak" || true
+            cat "$blockfile" >"$tmp"
+            printf '\n' >>"$tmp"
+            # Strip CR while keeping every other line.
+            awk '{ sub(/\r$/, ""); print }' "$file" >>"$tmp"
+        else
+            cat "$blockfile" >"$tmp"
+        fi
+    fi
+    mkdir -p "$(dirname "$file")"
+    cat "$tmp" >"$file"
+    chmod 600 "$file" || true
+    rm -f "$tmp"
+}
+
+fnLockPrivateKey() {
+    local key=$1
+    local uname_s win
+    chmod 600 "$key" 2>/dev/null || true
+    chmod 644 "${key}.pub" 2>/dev/null || true
+    uname_s=$(uname -s 2>/dev/null || echo unknown)
+    case "$uname_s" in
+        MINGW*|MSYS*|CYGWIN*)
+            if command -v icacls.exe >/dev/null 2>&1; then
+                if command -v cygpath >/dev/null 2>&1; then
+                    win=$(cygpath -w "$key")
+                else
+                    win=$key
+                fi
+                icacls.exe "$win" /inheritance:r >/dev/null 2>&1 || true
+                icacls.exe "$win" /grant:r "${USERNAME}:(R)" >/dev/null 2>&1 || true
+            fi
+            ;;
+    esac
+}
+
+fnGenerateKey() {
+    local keyfile=$1 type=$2 comment=$3
+    local -a args
+    args=(ssh-keygen -t "$type" -C "$comment" -f "$keyfile")
+    if [[ "$type" == "rsa" ]]; then
+        args+=(-b 4096)
+    fi
+    if [[ "$empty_pass" -eq 1 ]]; then
+        args+=(-N "")
+    elif [[ "$passphrase_set" -eq 1 ]]; then
+        args+=(-N "$passphrase")
+    else
+        echo -e "${IWhite}ssh-keygen will ask for a passphrase twice. A blank entry means no passphrase.${ColorReset}"
+        echo -e "${IWhite}To skip the prompt next time, pass ${IYellow}--empty-passphrase${IWhite}.${ColorReset}"
+        echo
+    fi
+    if ! "${args[@]}"; then
+        die "ssh-keygen failed. No config change was kept for this host."
+    fi
+    [[ -f "${keyfile}.pub" ]] || die "ssh-keygen did not write ${keyfile}.pub"
+    fnLockPrivateKey "$keyfile"
+}
+
+fnInstallKey() {
+    local pub=$1 user=$2 host=$3 port=$4
+    local key q remote
+    if command -v ssh-copy-id >/dev/null 2>&1; then
+        ssh-copy-id -p "$port" -i "$pub" \
+            -o PreferredAuthentications=publickey,password,keyboard-interactive \
+            -o ConnectTimeout=15 \
+            "${user}@${host}"
+        return $?
+    fi
+    key=$(tr -d '\r' <"$pub")
+    key=${key%$'\n'}
+    q=$(fnShQuote "$key")
+    remote="umask 077; mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && grep -qxF ${q} ~/.ssh/authorized_keys || printf '%s\n' ${q} >> ~/.ssh/authorized_keys"
+    ssh -p "$port" \
+        -o PreferredAuthentications=publickey,password,keyboard-interactive \
+        -o ConnectTimeout=15 \
+        "${user}@${host}" \
+        "$remote"
+}
+
+fnManualInstall() {
+    local pub=$1 user=$2 host=$3 port=$4
+    local shown
+    shown=$(tr -d '\r' <"$pub")
+    echo
+    echo -e "${IRed}Could not install the key automatically.${ColorReset}"
+    echo -e "${IWhite}The key and the SSH config entry are already on this machine.${ColorReset}"
+    echo -e "${IWhite}Public key:${ColorReset}"
+    echo
+    echo -e "${ICyan}${shown}${ColorReset}"
+    echo
+    echo -e "${IWhite}On the server, as ${ICyan}${user}${IWhite}, append that one line to ~/.ssh/authorized_keys${ColorReset}"
+    echo -e "${IWhite}Permissions on the server:${ColorReset}"
+    echo -e "${IYellow}  chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys${ColorReset}"
+    if [[ "$port" == "22" ]]; then
+        echo -e "${IYellow}  ssh-copy-id -i \"${pub}\" ${user}@${host}${ColorReset}"
+    else
+        echo -e "${IYellow}  ssh-copy-id -p ${port} -i \"${pub}\" ${user}@${host}${ColorReset}"
+    fi
+}
+
+fnServerReminder() {
+    local alias=$1
+    echo
+    echo -e "${IWhite}In a second terminal, confirm the key works before you change the server:${ColorReset}"
+    echo -e "${IYellow}  ssh ${alias}${ColorReset}"
+    echo
+    echo -e "${IWhite}Password login can be turned off after that. Do not set UsePAM no.${ColorReset}"
+    echo -e "${IWhite}On current Fedora, Ubuntu, and Raspberry Pi OS, add${ColorReset}"
+    echo -e "${IWhite}/etc/ssh/sshd_config.d/99-keys-only.conf with:${ColorReset}"
+    echo -e "${IYellow}  PasswordAuthentication no${ColorReset}"
+    echo -e "${IYellow}  KbdInteractiveAuthentication no${ColorReset}"
+    echo -e "${IYellow}  PubkeyAuthentication yes${ColorReset}"
+    echo
+    echo -e "${IWhite}Check the config, then reload:${ColorReset}"
+    echo -e "${IYellow}  Fedora:           sudo sshd -t && sudo systemctl reload sshd${ColorReset}"
+    echo -e "${IYellow}  Ubuntu:           sudo sshd -t && sudo systemctl reload ssh${ColorReset}"
+    echo -e "${IYellow}  Raspberry Pi OS:  sudo sshd -t && sudo systemctl reload ssh${ColorReset}"
+    echo
+    echo -e "${IWhite}Raspberry Pi OS does not listen for SSH until you enable it:${ColorReset}"
+    echo -e "${IYellow}  sudo systemctl enable --now ssh${ColorReset}"
+}
+
+# --- arguments ---
+alias_name=""
+port="22"
+key_type="ed25519"
+comment=""
+remote_user=""
+positional_user=""
+passphrase=""
+passphrase_set=0
+empty_pass=0
+no_copy=0
+host=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -a|--alias)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            alias_name=$2
+            shift 2
+            ;;
+        -p|--port)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            port=$2
+            shift 2
+            ;;
+        -t|--type)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            key_type=$2
+            shift 2
+            ;;
+        -c|--comment)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            comment=$2
+            shift 2
+            ;;
+        -u|--user)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            remote_user=$2
+            shift 2
+            ;;
+        -N|--passphrase)
+            [[ $# -ge 2 ]] || die "Missing value for $1"
+            passphrase=$2
+            passphrase_set=1
+            shift 2
+            ;;
+        --empty-passphrase)
+            empty_pass=1
+            shift
+            ;;
+        --no-copy)
+            no_copy=1
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            die "Unknown option: $1"
+            ;;
+        *)
+            if [[ -z "$host" ]]; then
+                host=$1
+            elif [[ -z "$positional_user" ]]; then
+                positional_user=$1
+            else
+                die "Too many arguments: $1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+while [[ $# -gt 0 ]]; do
+    if [[ -z "$host" ]]; then
+        host=$1
+    elif [[ -z "$positional_user" ]]; then
+        positional_user=$1
+    else
+        die "Too many arguments: $1"
+    fi
+    shift
+done
+
+fnDisplayRevision
+if [[ "$no_copy" -eq 1 ]]; then
+    fnDepCheck 0
+else
+    fnDepCheck 1
+fi
+
+[[ -n "${HOME:-}" ]] || die "HOME is not set."
+[[ -n "$host" ]] || { usage >&2; die "Give a host name."; }
+
+if [[ "$empty_pass" -eq 1 && "$passphrase_set" -eq 1 ]]; then
+    die "Use either --empty-passphrase or -N, not both."
+fi
+
+key_type=$(printf '%s' "$key_type" | tr '[:upper:]' '[:lower:]')
+case "$key_type" in
+    ed25519|rsa) ;;
+    *) die "Key type must be ed25519 or rsa." ;;
+esac
+
+if [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    die "Port must be 1-65535."
+fi
+port=$((10#$port))
+if (( port < 1 || port > 65535 )); then
+    die "Port must be 1-65535."
+fi
+
+embedded_user=""
+if [[ "$host" == *@*@* || "$host" == @* || "$host" == *@ ]]; then
+    die "Host must look like myserver or myuser@myserver."
+fi
+if [[ "$host" == *@* ]]; then
+    embedded_user=${host%@*}
+    host=${host#*@}
+fi
+
+if [[ -n "$remote_user" && -n "$positional_user" && "$remote_user" != "$positional_user" ]]; then
+    die "Remote user was given twice."
+fi
+if [[ -z "$remote_user" ]]; then
+    remote_user=$positional_user
+fi
+if [[ -n "$remote_user" && -n "$embedded_user" && "$remote_user" != "$embedded_user" ]]; then
+    die "Remote user was given twice."
+fi
+if [[ -z "$remote_user" ]]; then
+    remote_user=$embedded_user
+fi
+if [[ -z "$remote_user" ]]; then
+    remote_user=${USER:-$(id -un)}
+fi
+
+fnValidName "$host" || die "Host may only use letters, numbers, dots, underscores, and hyphens."
+fnValidUser "$remote_user" || die "Remote user is not a normal account name."
+
+if [[ -z "$alias_name" ]]; then
+    alias_name=$host
+fi
+fnValidName "$alias_name" || die "Alias may only use letters, numbers, dots, underscores, and hyphens."
+
+if [[ -z "$comment" ]]; then
+    short_host=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo localhost)
+    comment="${USER:-$(id -un)}@${short_host}"
+fi
+if [[ "$comment" == *$'\n'* ]]; then
+    die "Comment cannot contain a newline."
+fi
+
+if [[ "$empty_pass" -eq 0 && "$passphrase_set" -eq 0 && ! -t 0 ]]; then
+    die "No terminal for a passphrase prompt. Pass --empty-passphrase or -N."
+fi
+
+ssh_dir="${HOME}/.ssh"
+mkdir -p "$ssh_dir"
+chmod 700 "$ssh_dir" 2>/dev/null || true
+
+key_name="id_${key_type}.${alias_name}"
+keyfile="${ssh_dir}/${key_name}"
+ident_config="~/.ssh/${key_name}"
+config_file="${ssh_dir}/config"
+
+if [[ "$remote_user" == "root" ]]; then
+    echo -e "${IYellow}Remote user is root. A normal account is safer.${ColorReset}"
+    echo
+fi
+
+if [[ -f "$keyfile" ]]; then
+    echo -e "${IYellow}Key exists. Using existing key.${ColorReset}"
+    echo -e "${ICyan}  ${keyfile}${ColorReset}"
+    [[ -f "${keyfile}.pub" ]] || die "Private key exists but ${keyfile}.pub does not."
+    echo
+else
+    echo -e "${IWhite}Creating ${ICyan}${key_type}${IWhite} key ${ICyan}${keyfile}${ColorReset}"
+    fnGenerateKey "$keyfile" "$key_type" "$comment"
+    echo
+fi
+
+if fnHostListedOutsideBlock "$config_file" "$alias_name"; then
+    echo -e "${IYellow}An older Host ${alias_name} entry is in ${config_file}.${ColorReset}"
+    echo -e "${IYellow}The managed block is placed first, and SSH uses that one.${ColorReset}"
+    echo
+fi
+
+block_file=$(mktemp)
+fnWriteBlock "$block_file" "$alias_name" "$host" "$remote_user" "$port" "$ident_config"
+fnUpsertConfig "$config_file" "$alias_name" "$block_file"
+rm -f "$block_file"
+echo -e "${IGreen}SSH config updated:${ColorReset} ${config_file}"
+echo
+
+if [[ "$no_copy" -eq 1 ]]; then
+    echo -e "${IWhite}Skipped the copy to the server.${ColorReset}"
+    fnServerReminder "$alias_name"
+    exit 0
+fi
+
+echo -e "${IGreen}Installing the public key for ${ICyan}${remote_user}@${host}${ColorReset}"
+if fnInstallKey "${keyfile}.pub" "$remote_user" "$host" "$port"; then
+    echo
+    echo -e "${IGreen}Key installed.${ColorReset}"
+    fnServerReminder "$alias_name"
+    exit 0
+fi
+
+fnManualInstall "${keyfile}.pub" "$remote_user" "$host" "$port"
+fnServerReminder "$alias_name"
+exit 2

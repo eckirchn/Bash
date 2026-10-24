@@ -1,6 +1,6 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 4:16 AM MDT
+Updated: 24 October 2026, 4:19 AM MDT
 
 Writes the current repo files into `$HOME/bin`. Files that are not in the repo are left in place.
 
@@ -26,7 +26,7 @@ gitBinUpdate "$HOME/bin"
 
 | | |
 |---|---|
-| Replace `blackframeextract` with the repo copy | Yes |
+| Replace `sshkeygen` with the repo copy | Yes |
 | Leave a local script such as `myLocalScript` alone | Yes |
 | Delete a file that is not in the repo | No |
 | Keep a local edit to a file that is in the repo | No. The repo copy wins. |

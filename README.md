@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 4:16 AM MDT
+Updated: 24 October 2026, 4:19 AM MDT
 
 Private scripts. The working repository is [eckirchn/Bash](https://github.com/eckirchn/Bash). Checked out at `$HOME/bin`. History is in [CHANGELOG.md](CHANGELOG.md). Changes are committed here. Nothing is published to another repository unless that is requested.
 
@@ -37,13 +37,14 @@ git clone git@github.com:eckirchn/Bash.git
 
 ### SSH key for one server
 
-`sshkeygen` is public. It is not in this repository.
+`sshkeygen` is in this repository. It is the only script that is also public.
 
 ```bash
 git clone https://github.com/eckirchn/sshkeygen.git
+sshkeygen myserver
 ```
 
-Linux: `sshkeygen myserver`. Windows PowerShell: `.\sshkeygen.ps1 myserver`. Details are in that repository.
+From Windows PowerShell, in that clone: `.\sshkeygen.ps1 myserver`. Details: [docs/sshkeygen.md](docs/sshkeygen.md).
 
 ### Black frames
 
@@ -71,6 +72,8 @@ The batch script does not compile.
 |---|---|---|
 | `gitBinCreate` | [docs/gitBinCreate.md](docs/gitBinCreate.md) | First checkout in `$HOME/bin` |
 | `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) | Replace repo files, keep local ones |
+| `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) | `~/.ssh/id_ed25519.myserver` and a Host block. Also public at `eckirchn/sshkeygen`. |
+| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) | Same result from Windows PowerShell |
 | `h264BlackFrameExtract` | [docs/h264BlackFrameExtract.md](docs/h264BlackFrameExtract.md) | `MyClip_work/` with previews |
 | `h264BlackFrameExtract-batch` | [docs/h264BlackFrameExtract-batch.md](docs/h264BlackFrameExtract-batch.md) | one work folder per `.mp4` |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) | `MyClip.h264.mp4` |
