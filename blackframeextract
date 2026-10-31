@@ -1,1 +1,261 @@
-PLACEHOLDER_SCRIPT
+#!/bin/bash
+# Updated: 31 October 2026, 1:38 AM MDT
+# blackframeextract
+# Find black-frame cut points and write preview clips for review.
+# The source file is moved into a folder named after it only after the
+# whole run finishes successfully:
+#   MyClip.mp4  ->  MyClip/MyClip.mp4
+# If anything fails, the source stays where it was.
+#
+# Detection skips B-frames and measures black on a 160px-wide image.
+# That is faster than a full-size scan and still catches commercial breaks.
+# Previews are 288p, ultrafast, CRF 26: easier to judge than 180p,
+# still small next to the source.
+
+set -euo pipefail
+
+ColorReset='\033[0m'
+IWhite='\033[0;97m'
+IYellow='\033[0;93m'
+ICyan='\033[0;96m'
+IGreen='\033[0;92m'
+IRed='\033[0;91m'
+IPurple='\033[0;95m'
+
+fnDisplayRevision() {
+    echo -e "${IWhite}Script Revision:${IYellow}  20261031_0138${ColorReset}"
+    echo -e "${IPurple}  blackframeextract, move source only on success, faster blackdetect, 288p previews${ColorReset}"
+    echo
+}
+
+fnDepCheck() {
+    local missing=0
+    echo -e "${IWhite}Dependency check${ColorReset}"
+    for cmd in ffmpeg ffprobe bc; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            echo -e "  $cmd: ${IGreen}OK${ColorReset}"
+        else
+            echo -e "  ${IRed}missing: $cmd${ColorReset}"
+            echo -e "  Install: ${IYellow}sudo apt update && sudo apt install ffmpeg bc${ColorReset}"
+            missing=1
+        fi
+    done
+    if (( missing )); then
+        echo -e "${IRed}Dependencies missing. Exiting.${ColorReset}"
+        exit 1
+    fi
+    echo
+}
+
+fnGetFPS() {
+    local file="$1"
+    ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate \
+        -of csv=p=0 "$file" | head -1
+}
+
+fnGetDuration() {
+    local file="$1"
+    ffprobe -v error -show_entries format=duration -of csv=p=0 "$file"
+}
+
+fnDetectBlackSegments() {
+    local infile="$1"
+    local outfile="$2"
+
+    local d=0.15
+    local pic_th=0.98
+    local pix_th=0.12
+
+    echo -e "${IWhite}Running blackdetect on ${ICyan}$infile${ColorReset}"
+    # -skip_frame bidir drops B-frames before they are reconstructed.
+    # scale makes the black test cheap. Commercial blacks are long enough
+    # to still show up on the I and P frames that remain.
+    ffmpeg -nostdin -hide_banner -loglevel info \
+        -threads 0 -skip_frame bidir -i "$infile" \
+        -vf "scale=160:-2:flags=fast_bilinear,blackdetect=d=${d}:pic_th=${pic_th}:pix_th=${pix_th}" \
+        -an -sn -f null - 2>&1 \
+        | grep -E 'black_start|black_end|black_duration' \
+        | sed -E 's/.*black_start:([0-9.]+).*black_end:([0-9.]+).*black_duration:([0-9.]+).*/\1 \2 \3/' \
+        > "$outfile.tmp" || true
+
+    if [[ ! -s "$outfile.tmp" ]]; then
+        echo -e "${IYellow}No black segments detected. Creating empty log.${ColorReset}"
+        : > "$outfile"
+    else
+        mv "$outfile.tmp" "$outfile"
+    fi
+    echo -e "${IGreen}Black segments written to ${outfile}${ColorReset}"
+    echo
+}
+
+fnIdentifyClips() {
+    local infile="$1"
+    local blacklog="$2"
+    local cliplog="$3"
+
+    local fps duration
+    fps=$(fnGetFPS "$infile")
+    duration=$(fnGetDuration "$infile")
+
+    : > "$cliplog"
+    local clip=0
+    local prev_end=0
+
+    while read -r start end dur; do
+        [[ -z "${start:-}" ]] && continue
+        local mid
+        mid=$(bc -l <<< "($start + $end) / 2")
+        clip=$((clip + 1))
+        local cfill
+        cfill=$(printf "%03d" "$clip")
+
+        local fstart fstop tstart tstop
+        fstart=$(printf "%.0f" "$(bc -l <<< "$prev_end * $fps" 2>/dev/null || echo 0)")
+        fstop=$(printf "%.0f" "$(bc -l <<< "$mid * $fps" 2>/dev/null || echo 0)")
+        tstart=$(printf "%013.6f" "$prev_end")
+        tstop=$(printf "%013.6f" "$mid")
+
+        echo "Clip:$cfill fStart:$fstart fStop:$fstop tStart:$tstart tStop:$tstop" >> "$cliplog"
+        echo -e "${IWhite}Clip ${ICyan}$cfill${IWhite}  ${IGreen}$tstart${IWhite} → ${IRed}$tstop${ColorReset}"
+
+        prev_end=$mid
+    done < "$blacklog"
+
+    clip=$((clip + 1))
+    local cfill
+    cfill=$(printf "%03d" "$clip")
+    local tstart tstop
+    tstart=$(printf "%013.6f" "$prev_end")
+    tstop=$(printf "%013.6f" "$duration")
+    echo "Clip:$cfill fStart:0 fStop:0 tStart:$tstart tStop:$tstop" >> "$cliplog"
+    echo -e "${IWhite}Clip ${ICyan}$cfill${IWhite}  ${IGreen}$tstart${IWhite} → ${IRed}$tstop${ColorReset} (to end)"
+    echo
+}
+
+fnGenerateLQClips() {
+    local infile="$1"
+    local cliplog="$2"
+    local outdir="$3"
+
+    mkdir -p "$outdir"
+    echo -e "${IWhite}Generating preview clips into ${ICyan}$outdir${ColorReset}"
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local clip tstart tstop
+        clip=$(echo "$line" | grep -oP '(?<=Clip:).*' | cut -f1 -d' ')
+        tstart=$(echo "$line" | grep -oP '(?<=tStart:).*' | cut -f1 -d' ')
+        tstop=$(echo "$line" | grep -oP '(?<=tStop:).*' | cut -f1 -d' ')
+
+        local length
+        length=$(bc -l <<< "$tstop - $tstart")
+        local outfile="${outdir}/LQ_Clip${clip}_${tstart}-${tstop}.mp4"
+
+        echo -e "${IGreen}Preview $clip${ColorReset}  ${tstart}–${tstop} (${length}s)"
+        local pre=10
+        local prestart="$tstart"
+        local acc=0
+        if (( $(bc -l <<< "$tstart >= $pre") )); then
+            prestart=$(bc -l <<< "$tstart - $pre")
+            acc=$pre
+        else
+            prestart=0
+            acc=$tstart
+        fi
+        ffmpeg -nostdin -hide_banner -stats -loglevel error \
+            -ss "$prestart" -i "$infile" -ss "$acc" -t "$length" \
+            -threads 0 -c:v libx264 -preset ultrafast \
+            -vf "scale=-2:288" -crf 26 -movflags +faststart \
+            -c:a copy -y "$outfile" || echo -e "${IRed}Failed: $outfile${ColorReset}"
+    done < "$cliplog"
+    echo
+}
+
+fnEmitHQScript() {
+    local hqscript="$1"
+
+    cat > "$hqscript" << 'EOF'
+#!/bin/sh
+# Delete the previews you do not want, then run this.
+# It encodes the clips still in lq_previews into MyClip.h264.mp4.
+cd "$(dirname "$0")" || exit 1
+if ! command -v h264BlackFrameCompile >/dev/null 2>&1; then
+    echo "h264BlackFrameCompile is not on PATH." >&2
+    echo 'git -C "$HOME/bin" fetch origin && git -C "$HOME/bin" reset --hard origin/main' >&2
+    exit 1
+fi
+exec h264BlackFrameCompile .
+EOF
+    chmod +x "$hqscript"
+    echo -e "${IGreen}HQ launcher written: ${ICyan}$hqscript${ColorReset}"
+    echo -e "After deleting unwanted previews: ${IYellow}sh $hqscript${ColorReset}"
+    echo
+}
+
+fnDisplayRevision
+fnDepCheck
+
+if [[ $# -lt 1 ]]; then
+    echo -e "${IRed}Usage: $0 <video-file>${ColorReset}"
+    exit 1
+fi
+
+if [[ ! -f "$1" ]]; then
+    echo -e "${IRed}File not found: $1${ColorReset}"
+    exit 1
+fi
+
+INFILE=$(readlink -f "$1")
+BASE=$(basename "$INFILE")
+BNAME="${BASE%.*}"
+PARENT=$(dirname "$INFILE")
+ALREADY_IN_FOLDER=0
+DEST=""
+
+# Already inside MyClip/MyClip.mp4: that folder is the work directory.
+if [[ "$(basename "$PARENT")" == "$BNAME" ]]; then
+    WORKDIR="$PARENT"
+    ALREADY_IN_FOLDER=1
+else
+    WORKDIR="$PARENT/$BNAME"
+    if [[ -e "$WORKDIR" && ! -d "$WORKDIR" ]]; then
+        echo -e "${IRed}Cannot create folder (a file is in the way): $WORKDIR${ColorReset}"
+        exit 1
+    fi
+    mkdir -p "$WORKDIR"
+    DEST="$WORKDIR/$BASE"
+    if [[ -e "$DEST" ]]; then
+        echo -e "${IRed}Refusing to move; already exists: $DEST${ColorReset}"
+        exit 1
+    fi
+fi
+
+BLACKLOG="$WORKDIR/${BNAME}_black.log"
+CLIPLOG="$WORKDIR/${BNAME}_clips.log"
+LQDIR="$WORKDIR/lq_previews"
+HQSCRIPT="$WORKDIR/${BNAME}_hq.sh"
+
+fnDetectBlackSegments "$INFILE" "$BLACKLOG"
+fnIdentifyClips "$INFILE" "$BLACKLOG" "$CLIPLOG"
+fnGenerateLQClips "$INFILE" "$CLIPLOG" "$LQDIR"
+fnEmitHQScript "$HQSCRIPT"
+
+# Move the source only after every step above has succeeded.
+# set -e stops the script before this line if anything failed.
+if [[ $ALREADY_IN_FOLDER -eq 0 ]]; then
+    echo -e "${IWhite}All steps finished. Moving source into work folder...${ColorReset}"
+    mv -v "$INFILE" "$DEST"
+    echo -e "${IGreen}Source moved: ${ICyan}$DEST${ColorReset}"
+else
+    echo -e "${IWhite}Source already in work folder. Left in place.${ColorReset}"
+fi
+
+echo -e "${IGreen}Done.${ColorReset}"
+echo -e "Folder:      ${ICyan}$WORKDIR${ColorReset}"
+echo -e "Source:      ${ICyan}$WORKDIR/$BASE${ColorReset}"
+echo -e "Previews:    ${ICyan}$WORKDIR/$LQDIR${ColorReset}"
+echo -e "HQ launcher: ${ICyan}$WORKDIR/$HQSCRIPT${ColorReset}"
+echo -e "Black log:   ${ICyan}$WORKDIR/$BLACKLOG${ColorReset}"
+echo -e "Clip log:    ${ICyan}$WORKDIR/$CLIPLOG${ColorReset}"
+echo
+echo -e "${IWhite}Delete the previews you do not want, then run h264BlackFrameCompile or h265BlackFrameCompile here.${ColorReset}"

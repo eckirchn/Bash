@@ -1,1 +1,82 @@
-PLACEHOLDER_README
+# Bash scripts
+
+Updated: 31 October 2026, 1:38 AM MDT
+
+Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
+
+## Get the scripts
+
+```bash
+git clone https://github.com/eckirchn/Bash.git
+cd Bash
+```
+
+Clone to any directory you like (for example `$HOME/Bash`).
+
+## Run a script from anywhere
+
+You do not have to copy scripts or change your `PATH`. Examples:
+
+```bash
+# Full path — works from any directory
+$HOME/Bash/h264BlackFrameCompile
+
+# Or change into the clone and run with ./
+cd $HOME/Bash
+./h264BlackFrameCompile
+./sshkeygen myserver
+```
+
+## Optional: symbolic links into `$HOME/bin`
+
+If you want the scripts on your `PATH` and also want `git pull` to update them automatically, link instead of copy:
+
+```bash
+mkdir -p "$HOME/bin"
+cd "$HOME/bin"
+
+# Link every executable script from the clone (adjust the path)
+for s in "$HOME/Bash"/*; do
+  [ -f "$s" ] && [ -x "$s" ] && ln -sf "$s" .
+done
+```
+
+Or link only the ones you care about:
+
+```bash
+cd "$HOME/bin"
+ln -sf "$HOME/Bash/sshkeygen" .
+ln -sf "$HOME/Bash/h264BlackFrameCompile" .
+```
+
+After a `git pull` inside `$HOME/Bash` the linked names in `$HOME/bin` continue to point at the updated files. No re-copy needed.
+
+## Later updates
+
+```bash
+cd "$HOME/Bash"
+git pull
+```
+
+If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`. It fetches the public HTTPS URL (no login) and replaces only the files that are in the repository. Extra local scripts are left alone.
+
+## Examples
+
+```bash
+./sshkeygen myserver
+./blackframeextract MyClip.mp4
+```
+
+Detailed steps (preview folders, which clips to keep, compile options, etc.) are in the individual files under `docs/`.
+
+## Scripts
+
+| Script | Doc |
+|--------|-----|
+| `gitBinUpdate` | [docs/gitBinUpdate.md](docs/gitBinUpdate.md) |
+| `sshkeygen` | [docs/sshkeygen.md](docs/sshkeygen.md) |
+| `sshkeygen.ps1` | [docs/sshkeygen.md](docs/sshkeygen.md) (non-Bash, optional) |
+| `blackframeextract` | [docs/blackframeextract.md](docs/blackframeextract.md) |
+| `blackframeextract-batch` | [docs/blackframeextract-batch.md](docs/blackframeextract-batch.md) |
+| `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) |
+| `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) |
