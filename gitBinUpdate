@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Updated: 31 October 2026, 1:10 AM MDT
+# Updated: 31 October 2026, 1:15 AM MDT
 # gitBinUpdate — refresh repo files in an existing $HOME/bin checkout from the public HTTPS URL.
 #
-# Overwrites files that are in the repo. Before replacing a file that differs
-# locally, archives the local copy as <name>.YYYYMMDD_HHMMSS (Mountain Time).
+# Overwrites files that are in the repo. Before replacing a file whose content
+# or mode differs, archives the local copy as <name>.YYYYMMDD_HHMMSS (Mountain Time).
+# After writing, restores the executable bit on any file that starts with a shebang.
 # Leaves every other file in the directory alone. Does not git clean, and does
 # not reset --hard.
 # Does not read or write SSH keys or SSH config.
@@ -21,7 +22,7 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261031_0110"
+REV="20261031_0115"
 DEFAULT_BRANCH="main"
 DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
 TZ_MT="America/Denver"
@@ -33,7 +34,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  Updates over HTTPS. Archives differing local files. Leaves extras alone.${ColorReset}"
+    echo -e "${IPurple}  Updates over HTTPS. Archives differing files. Restores +x on shebang scripts.${ColorReset}"
     echo
 }
 
@@ -47,8 +48,9 @@ The directory must already be a checkout of this repository.
 This script does not clone and does not create a checkout.
 Files already there that are not in the repo are not removed.
 Files that are in the repo are replaced from the public HTTPS URL.
-A local file that differs from the incoming version is first renamed to
+A local file whose content or mode differs is first renamed to
   <name>.YYYYMMDD_HHMMSS   (Mountain Time)
+After the update, any file that starts with a shebang is made executable.
 Does not change SSH keys, SSH config, or git settings outside that directory.
 If the origin is the SSH form of this repository, it is rewritten to HTTPS.
 A fetch does not need a login or an SSH key.
@@ -167,14 +169,36 @@ fnEnsureHttps() {
     git -C "$bin" remote set-url origin "$DEFAULT_REMOTE"
 }
 
+fnLocalDiffers() {
+    local bin=$1 branch=$2 path=$3
+    local localfile="${bin}/${path}"
+    # Content difference
+    if ! git -C "$bin" diff --quiet "origin/${branch}" -- "$path" 2>/dev/null; then
+        return 0
+    fi
+    # Mode difference (e.g. +x lost or gained)
+    local wantmode localmode
+    wantmode=$(git -C "$bin" ls-tree "origin/${branch}" -- "$path" | awk '{print $1}')
+    if [[ -f "$localfile" ]]; then
+        if [[ -x "$localfile" ]]; then
+            localmode=100755
+        else
+            localmode=100644
+        fi
+        if [[ "$wantmode" != "$localmode" ]]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
 fnArchiveIfDifferent() {
     local bin=$1 branch=$2 path=$3
     local localfile="${bin}/${path}"
     if [[ ! -f "$localfile" ]]; then
         return 0
     fi
-    # Same content as the version we are about to write?
-    if git -C "$bin" diff --quiet "origin/${branch}" -- "$path" 2>/dev/null; then
+    if ! fnLocalDiffers "$bin" "$branch" "$path"; then
         return 0
     fi
     local stamp archive n=1
@@ -186,6 +210,23 @@ fnArchiveIfDifferent() {
     done
     echo -e "${IYellow}Archiving differing local ${ICyan}${path}${IYellow} as ${ICyan}${archive##*/}${ColorReset}"
     mv -v "$localfile" "$archive"
+}
+
+fnRestoreShebangExec() {
+    local bin=$1
+    local path list
+    list=$(mktemp)
+    git -C "$bin" ls-tree -r -z --name-only HEAD >"$list" || true
+    while IFS= read -r -d '' path; do
+        local f="${bin}/${path}"
+        if [[ -f "$f" ]] && head -n1 "$f" 2>/dev/null | grep -q '^#!'; then
+            if [[ ! -x "$f" ]]; then
+                chmod +x "$f"
+                echo -e "${IGreen}Restored +x on ${ICyan}${path}${ColorReset}"
+            fi
+        fi
+    done <"$list"
+    rm -f "$list"
 }
 
 fnWriteRepoFiles() {
@@ -200,6 +241,7 @@ fnWriteRepoFiles() {
     rm -f "$list"
     git -C "$bin" symbolic-ref HEAD "refs/heads/${branch}"
     git -C "$bin" reset --mixed "origin/${branch}" >/dev/null
+    fnRestoreShebangExec "$bin"
 }
 
 fnGitFetch() {

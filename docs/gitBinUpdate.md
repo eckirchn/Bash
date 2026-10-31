@@ -1,10 +1,12 @@
 # gitBinUpdate
 
-Updated: 31 October 2026, 1:10 AM MDT
+Updated: 31 October 2026, 1:15 AM MDT
 
 Refreshes repo files in a `$HOME/bin` that is already a checkout. Files that are not in the repo are left in place.
 
-Before a file that is in the repo is replaced, any differing local copy is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are left alone until the checkout step.
+Before a file that is in the repo is replaced, any local copy whose content or mode differs is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are left alone until the checkout step.
+
+After the files are written, any file that starts with a shebang (`#!`) is made executable. This restores the `+x` bit even when the tree mode in the repository is `100644`.
 
 It fetches the public repository over HTTPS. No login and no SSH key are required. If the origin is still the SSH form of this repository, the script rewrites it to HTTPS.
 
@@ -45,7 +47,8 @@ If that directory is not a checkout of this repository, the script stops. It doe
 | | |
 |---|---|
 | Replace `sshkeygen` with the repo copy | Yes |
-| Archive a differing local `sshkeygen` as `sshkeygen.20261031_011045` | Yes |
+| Archive a differing local `sshkeygen` as `sshkeygen.20261031_011545` | Yes |
+| Restore `+x` on a shebang script after checkout | Yes |
 | Leave a local script such as `myLocalScript` alone | Yes |
 | Delete a file that is not in the repo | No |
 | Keep a local edit to a file that is in the repo under the original name | No. The repo copy wins; the old one is archived with a timestamp. |

@@ -2,6 +2,12 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 31 October 2026, 1:15 AM MDT
+
+`gitBinUpdate` now restores the executable bit on any file that starts with a shebang after the checkout. This fixes the case where a script is stored as mode `100644` in the tree (so a plain `git checkout` removes `+x`).
+
+It also archives a local file when the mode differs, not only when the content differs. A mode-only change (for example losing `+x`) now produces a timestamped archive before the repository version is written.
+
 ## 31 October 2026, 1:10 AM MDT
 
 `gitBinUpdate` now archives a local file that differs from the incoming repository version before replacing it. The local copy is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are not archived. Extra local files that are not in the repository are still left alone.
