@@ -2,6 +2,12 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 31 October 2026, 1:05 AM MDT
+
+Archived the previous `gitBinUpdate` (the version that kept an existing origin, so SSH stayed SSH) as `archive/gitBinUpdate-owner`.
+
+The live `gitBinUpdate` now fetches the public repository over HTTPS. No login and no SSH key are required. If the origin is still the SSH form of this repository, the script rewrites it to `https://github.com/eckirchn/Bash.git`. It still only replaces files that are in the repository and leaves every other file in the directory alone. It does not create a checkout and does not touch SSH keys or SSH config.
+
 ## 24 October 2026, 6:40 AM MDT
 
 The install is one command:

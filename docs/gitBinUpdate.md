@@ -1,12 +1,14 @@
 # gitBinUpdate
 
-Updated: 24 October 2026, 6:40 AM MDT
+Updated: 31 October 2026, 1:05 AM MDT
 
 Refreshes repo files in a `$HOME/bin` that is already a checkout. Files that are not in the repo are left in place.
 
-It does not create a checkout. The origin URL already set is kept. An SSH checkout stays on SSH.
+It fetches the public repository over HTTPS. No login and no SSH key are required. If the origin is still the SSH form of this repository, the script rewrites it to HTTPS.
 
-It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
+It does not create a checkout. It does not read or write `~/.ssh`, and it does not change which SSH key a machine uses for GitHub.
+
+The previous version that kept an existing SSH origin is archived as `archive/gitBinUpdate-owner`.
 
 ## Install
 
@@ -34,7 +36,7 @@ Another directory:
 gitBinUpdate "$HOME/bin"
 ```
 
-If that directory is not a checkout, the script stops. It does not run `git init`.
+If that directory is not a checkout of this repository, the script stops. It does not run `git init`.
 
 ## What it will and will not do
 
@@ -48,6 +50,7 @@ If that directory is not a checkout, the script stops. It does not run `git init
 | Create a checkout | No |
 | Change SSH keys or SSH config | No |
 | Change git settings outside this directory | No |
-| Take over a checkout of a different remote | No, if `GIT_BIN_REMOTE` is set to the expected URL. If it is unset, the origin already there is used. |
+| Rewrite an SSH origin of this repository to HTTPS | Yes |
+| Take over a checkout of a different remote | No |
 
 A file removed from the repo is also left on disk. It is no longer tracked. Delete it yourself if you do not want it.

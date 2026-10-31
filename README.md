@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 October 2026, 7:17 AM MDT
+Updated: 31 October 2026, 1:05 AM MDT
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -58,7 +58,7 @@ cd "$HOME/Bash"
 git pull
 ```
 
-If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`.
+If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`. It fetches the public HTTPS URL (no login) and replaces only the files that are in the repository. Extra local scripts are left alone.
 
 ## Examples
 
