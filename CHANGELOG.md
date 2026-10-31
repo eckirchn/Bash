@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 31 October 2026, 1:38 AM MDT
+
+`blackframeextract` now moves the source file into its work folder only after the entire run finishes successfully. Detection, clip identification, preview generation, and the HQ launcher are written first. If any step fails, the source stays in its original location. The move uses `mv -v` only at the end.
+
 ## 31 October 2026, 1:20 AM MDT
 
 `gitBinUpdate` now skips everything under `archive/`. Those files are never downloaded or updated into the local directory.
