@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 31 October 2026, 1:20 AM MDT
+
+`gitBinUpdate` now skips everything under `archive/`. Those files are never downloaded or updated into the local directory.
+
 ## 31 October 2026, 1:15 AM MDT
 
 `gitBinUpdate` now restores the executable bit on any file that starts with a shebang after the checkout. This fixes the case where a script is stored as mode `100644` in the tree (so a plain `git checkout` removes `+x`).

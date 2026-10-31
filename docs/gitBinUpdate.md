@@ -1,8 +1,10 @@
 # gitBinUpdate
 
-Updated: 31 October 2026, 1:15 AM MDT
+Updated: 31 October 2026, 1:20 AM MDT
 
 Refreshes repo files in a `$HOME/bin` that is already a checkout. Files that are not in the repo are left in place.
+
+Anything under `archive/` is skipped. Those files are never downloaded or updated.
 
 Before a file that is in the repo is replaced, any local copy whose content or mode differs is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are left alone until the checkout step.
 
@@ -47,8 +49,9 @@ If that directory is not a checkout of this repository, the script stops. It doe
 | | |
 |---|---|
 | Replace `sshkeygen` with the repo copy | Yes |
-| Archive a differing local `sshkeygen` as `sshkeygen.20261031_011545` | Yes |
+| Archive a differing local `sshkeygen` as `sshkeygen.20261031_012045` | Yes |
 | Restore `+x` on a shebang script after checkout | Yes |
+| Download or update anything under `archive/` | No |
 | Leave a local script such as `myLocalScript` alone | Yes |
 | Delete a file that is not in the repo | No |
 | Keep a local edit to a file that is in the repo under the original name | No. The repo copy wins; the old one is archived with a timestamp. |

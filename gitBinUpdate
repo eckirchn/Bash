@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Updated: 31 October 2026, 1:15 AM MDT
+# Updated: 31 October 2026, 1:20 AM MDT
 # gitBinUpdate — refresh repo files in an existing $HOME/bin checkout from the public HTTPS URL.
 #
-# Overwrites files that are in the repo. Before replacing a file whose content
-# or mode differs, archives the local copy as <name>.YYYYMMDD_HHMMSS (Mountain Time).
+# Overwrites files that are in the repo, except anything under archive/.
+# Before replacing a file whose content or mode differs, archives the local copy
+# as <name>.YYYYMMDD_HHMMSS (Mountain Time).
 # After writing, restores the executable bit on any file that starts with a shebang.
 # Leaves every other file in the directory alone. Does not git clean, and does
 # not reset --hard.
@@ -22,7 +23,7 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261031_0115"
+REV="20261031_0120"
 DEFAULT_BRANCH="main"
 DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
 TZ_MT="America/Denver"
@@ -34,7 +35,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  Updates over HTTPS. Archives differing files. Restores +x on shebang scripts.${ColorReset}"
+    echo -e "${IPurple}  Updates over HTTPS. Skips archive/. Archives differing files. Restores +x.${ColorReset}"
     echo
 }
 
@@ -48,6 +49,7 @@ The directory must already be a checkout of this repository.
 This script does not clone and does not create a checkout.
 Files already there that are not in the repo are not removed.
 Files that are in the repo are replaced from the public HTTPS URL.
+Anything under archive/ is skipped and is never downloaded or updated.
 A local file whose content or mode differs is first renamed to
   <name>.YYYYMMDD_HHMMSS   (Mountain Time)
 After the update, any file that starts with a shebang is made executable.
@@ -169,6 +171,11 @@ fnEnsureHttps() {
     git -C "$bin" remote set-url origin "$DEFAULT_REMOTE"
 }
 
+fnSkipPath() {
+    local path=$1
+    [[ "$path" == archive || "$path" == archive/* ]]
+}
+
 fnLocalDiffers() {
     local bin=$1 branch=$2 path=$3
     local localfile="${bin}/${path}"
@@ -218,6 +225,7 @@ fnRestoreShebangExec() {
     list=$(mktemp)
     git -C "$bin" ls-tree -r -z --name-only HEAD >"$list" || true
     while IFS= read -r -d '' path; do
+        fnSkipPath "$path" && continue
         local f="${bin}/${path}"
         if [[ -f "$f" ]] && head -n1 "$f" 2>/dev/null | grep -q '^#!'; then
             if [[ ! -x "$f" ]]; then
@@ -235,6 +243,7 @@ fnWriteRepoFiles() {
     list=$(mktemp)
     git -C "$bin" ls-tree -r -z --name-only "origin/${branch}" >"$list"
     while IFS= read -r -d '' path; do
+        fnSkipPath "$path" && continue
         fnArchiveIfDifferent "$bin" "$branch" "$path"
         git -C "$bin" checkout -f "origin/${branch}" -- "$path"
     done <"$list"
@@ -268,6 +277,16 @@ fnShowLocalFiles() {
     if [[ "$shown" -eq 0 ]]; then
         echo -e "${IWhite}No extra local files.${ColorReset}"
     fi
+}
+
+fnCountRepoFiles() {
+    local bin=$1 branch=$2
+    local path count=0
+    while IFS= read -r path; do
+        fnSkipPath "$path" && continue
+        count=$((count + 1))
+    done < <(git -C "$bin" ls-tree -r --name-only "origin/${branch}")
+    printf '%s\n' "$count"
 }
 
 bin_arg=""
@@ -337,14 +356,13 @@ if ! git -C "$bin" rev-parse --verify --quiet "origin/${branch}" >/dev/null; the
     die "Remote has no branch ${branch}."
 fi
 
-count=$(git -C "$bin" ls-tree -r --name-only "origin/${branch}" | wc -l)
-count=${count// /}
+count=$(fnCountRepoFiles "$bin" "$branch")
 noun=files
 if [[ "$count" -eq 1 ]]; then
     noun=file
 fi
 echo -e "${IWhite}Writing ${ICyan}${count}${IWhite} repo ${noun} into ${ICyan}${bin}${ColorReset}"
-echo -e "${IWhite}Differing local files are archived first. Files that are not in the repo are not deleted.${ColorReset}"
+echo -e "${IWhite}Skipping archive/. Differing local files are archived first. Files that are not in the repo are not deleted.${ColorReset}"
 fnWriteRepoFiles "$bin" "$branch"
 
 echo -e "${IGreen}Updated the repo files.${ColorReset}"
