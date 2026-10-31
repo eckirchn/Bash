@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 31 October 2026, 1:10 AM MDT
+
+`gitBinUpdate` now archives a local file that differs from the incoming repository version before replacing it. The local copy is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are not archived. Extra local files that are not in the repository are still left alone.
+
 ## 31 October 2026, 1:05 AM MDT
 
 Archived the previous `gitBinUpdate` (the version that kept an existing origin, so SSH stayed SSH) as `archive/gitBinUpdate-owner`.

@@ -1,8 +1,10 @@
 # gitBinUpdate
 
-Updated: 31 October 2026, 1:05 AM MDT
+Updated: 31 October 2026, 1:10 AM MDT
 
 Refreshes repo files in a `$HOME/bin` that is already a checkout. Files that are not in the repo are left in place.
+
+Before a file that is in the repo is replaced, any differing local copy is renamed to `<name>.YYYYMMDD_HHMMSS` (Mountain Time). Identical files are left alone until the checkout step.
 
 It fetches the public repository over HTTPS. No login and no SSH key are required. If the origin is still the SSH form of this repository, the script rewrites it to HTTPS.
 
@@ -43,9 +45,10 @@ If that directory is not a checkout of this repository, the script stops. It doe
 | | |
 |---|---|
 | Replace `sshkeygen` with the repo copy | Yes |
+| Archive a differing local `sshkeygen` as `sshkeygen.20261031_011045` | Yes |
 | Leave a local script such as `myLocalScript` alone | Yes |
 | Delete a file that is not in the repo | No |
-| Keep a local edit to a file that is in the repo | No. The repo copy wins. |
+| Keep a local edit to a file that is in the repo under the original name | No. The repo copy wins; the old one is archived with a timestamp. |
 | Commit or push what is only on this machine | No |
 | Create a checkout | No |
 | Change SSH keys or SSH config | No |
@@ -53,4 +56,4 @@ If that directory is not a checkout of this repository, the script stops. It doe
 | Rewrite an SSH origin of this repository to HTTPS | Yes |
 | Take over a checkout of a different remote | No |
 
-A file removed from the repo is also left on disk. It is no longer tracked. Delete it yourself if you do not want it.
+A file removed from the repo is also left on disk. It is no longer tracked. Delete it yourself if you do not want it. Archived timestamped copies stay until you remove them.

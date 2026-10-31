@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Updated: 31 October 2026, 1:05 AM MDT
+# Updated: 31 October 2026, 1:10 AM MDT
 # gitBinUpdate — refresh repo files in an existing $HOME/bin checkout from the public HTTPS URL.
 #
-# Overwrites files that are in the repo. Leaves every other file in the
-# directory alone. Does not git clean, and does not reset --hard.
+# Overwrites files that are in the repo. Before replacing a file that differs
+# locally, archives the local copy as <name>.YYYYMMDD_HHMMSS (Mountain Time).
+# Leaves every other file in the directory alone. Does not git clean, and does
+# not reset --hard.
 # Does not read or write SSH keys or SSH config.
 # Does not create a checkout.
 # If the origin is the SSH form of this repository, it is rewritten to HTTPS.
@@ -19,9 +21,10 @@ IGreen='\033[0;92m'
 IRed='\033[0;91m'
 IPurple='\033[0;95m'
 
-REV="20261031_0105"
+REV="20261031_0110"
 DEFAULT_BRANCH="main"
 DEFAULT_REMOTE="https://github.com/eckirchn/Bash.git"
+TZ_MT="America/Denver"
 
 die() {
     echo -e "${IRed}$*${ColorReset}" >&2
@@ -30,7 +33,7 @@ die() {
 
 fnDisplayRevision() {
     echo -e "${IWhite}Script Revision:${IYellow}  ${REV}${ColorReset}"
-    echo -e "${IPurple}  Updates an existing checkout over HTTPS. Leaves local files alone. Does not touch SSH keys.${ColorReset}"
+    echo -e "${IPurple}  Updates over HTTPS. Archives differing local files. Leaves extras alone.${ColorReset}"
     echo
 }
 
@@ -44,6 +47,8 @@ The directory must already be a checkout of this repository.
 This script does not clone and does not create a checkout.
 Files already there that are not in the repo are not removed.
 Files that are in the repo are replaced from the public HTTPS URL.
+A local file that differs from the incoming version is first renamed to
+  <name>.YYYYMMDD_HHMMSS   (Mountain Time)
 Does not change SSH keys, SSH config, or git settings outside that directory.
 If the origin is the SSH form of this repository, it is rewritten to HTTPS.
 A fetch does not need a login or an SSH key.
@@ -162,12 +167,34 @@ fnEnsureHttps() {
     git -C "$bin" remote set-url origin "$DEFAULT_REMOTE"
 }
 
+fnArchiveIfDifferent() {
+    local bin=$1 branch=$2 path=$3
+    local localfile="${bin}/${path}"
+    if [[ ! -f "$localfile" ]]; then
+        return 0
+    fi
+    # Same content as the version we are about to write?
+    if git -C "$bin" diff --quiet "origin/${branch}" -- "$path" 2>/dev/null; then
+        return 0
+    fi
+    local stamp archive n=1
+    stamp=$(TZ="$TZ_MT" date +%Y%m%d_%H%M%S)
+    archive="${localfile}.${stamp}"
+    while [[ -e "$archive" ]]; do
+        archive="${localfile}.${stamp}_${n}"
+        n=$((n + 1))
+    done
+    echo -e "${IYellow}Archiving differing local ${ICyan}${path}${IYellow} as ${ICyan}${archive##*/}${ColorReset}"
+    mv -v "$localfile" "$archive"
+}
+
 fnWriteRepoFiles() {
     local bin=$1 branch=$2
     local path list
     list=$(mktemp)
     git -C "$bin" ls-tree -r -z --name-only "origin/${branch}" >"$list"
     while IFS= read -r -d '' path; do
+        fnArchiveIfDifferent "$bin" "$branch" "$path"
         git -C "$bin" checkout -f "origin/${branch}" -- "$path"
     done <"$list"
     rm -f "$list"
@@ -275,7 +302,7 @@ if [[ "$count" -eq 1 ]]; then
     noun=file
 fi
 echo -e "${IWhite}Writing ${ICyan}${count}${IWhite} repo ${noun} into ${ICyan}${bin}${ColorReset}"
-echo -e "${IWhite}Files that are not in the repo are not deleted.${ColorReset}"
+echo -e "${IWhite}Differing local files are archived first. Files that are not in the repo are not deleted.${ColorReset}"
 fnWriteRepoFiles "$bin" "$branch"
 
 echo -e "${IGreen}Updated the repo files.${ColorReset}"
