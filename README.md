@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 07 November 2026, 2:42 AM MDT
+Updated: 07 November 2026, 3:09 AM MDT
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -80,3 +80,4 @@ Detailed steps (preview folders, which clips to keep, compile options, etc.) are
 | `blackframeextract-batch` | [docs/blackframeextract-batch.md](docs/blackframeextract-batch.md) |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) |
+| `BlackFrameCompile` | [docs/BlackFrameCompile.md](docs/BlackFrameCompile.md) |
