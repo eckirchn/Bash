@@ -2,6 +2,14 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 07 November 2026, 2:42 AM MDT
+
+`h265BlackFrameCompile` is now a complete standalone script. It no longer calls or depends on `h264BlackFrameCompile`. The full HEVC encode path (CPU wait, segment encoding with libx265 medium CRF 20 main10, concat) lives in the script itself. Previous wrapper version archived as `archive/h265BlackFrameCompile-20261024`.
+
+`h264BlackFrameCompile` no longer accepts `--hevc` or `--h265`. It is pure H.264. Previous version archived as `archive/h264BlackFrameCompile-20261024`.
+
+Docs for both updated. README timestamp refreshed.
+
 ## 31 October 2026, 1:38 AM MDT
 
 `blackframeextract` now moves the source file into its work folder only after the entire run finishes successfully. Detection, clip identification, preview generation, and the HQ launcher are written first. If any step fails, the source stays in its original location. The move uses `mv -v` only at the end.
