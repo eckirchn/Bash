@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 07 November 2026, 3:09 AM MDT
+
+Added `BlackFrameCompile`. It requires `h264` or `h265` as the first argument and encodes one continuous range from the earliest start timestamp to the latest stop timestamp found in `lq_previews/`. It does not process individual clips and ignores gaps. Output is `MyClip.h264.mp4` or `MyClip.h265.mp4`. Existing compile scripts were left unchanged. Docs and README updated.
+
 ## 07 November 2026, 2:42 AM MDT
 
 `h265BlackFrameCompile` is now a complete standalone script. It no longer calls or depends on `h264BlackFrameCompile`. The full HEVC encode path (CPU wait, segment encoding with libx265 medium CRF 20 main10, concat) lives in the script itself. Previous wrapper version archived as `archive/h265BlackFrameCompile-20261024`.
