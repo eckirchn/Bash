@@ -182,6 +182,28 @@ fi
 fetch_fix "${RAW}/login/localVariablesService.js" "${INSTALL_DIR}/desktop/server/services/localVariablesService.js"
 fetch_fix "${RAW}/login/localVariablesService.js" "${INSTALL_DIR}/server/services/localVariablesService.js"
 
+# The desktop window opens index.html as a file. An absolute /static path
+# never loads, which is the dark empty window. HashRouter matches file://.
+python3 - << PY
+import json
+p = "${INSTALL_DIR}/client/package.json"
+with open(p) as f:
+    data = json.load(f)
+if data.get("homepage") != ".":
+    data["homepage"] = "."
+    with open(p, "w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    print("→ Set client homepage to .")
+else:
+    print("→ client homepage already .")
+PY
+appjs="${INSTALL_DIR}/client/src/App.js"
+if grep -q 'BrowserRouter as Router' "${appjs}"; then
+  sed -i 's/BrowserRouter as Router/HashRouter as Router/' "${appjs}"
+  echo "→ Using HashRouter"
+fi
+
 echo "→ Installing root dependencies..."
 npm install
 
@@ -191,6 +213,11 @@ npm install
 ensure_client_env
 echo "→ Building client..."
 DISABLE_ESLINT_PLUGIN=true npm run build
+if grep -E -q 'src="/static/|href="/static/' build/index.html; then
+  echo "Error: client build still uses /static paths. The window would stay blank."
+  exit 1
+fi
+echo "→ Client build uses relative paths."
 cd "${INSTALL_DIR}"
 
 mkdir -p desktop/client
@@ -216,4 +243,4 @@ echo "=== Update complete ==="
 echo "Location: ${INSTALL_DIR}"
 echo "Stop the app if it is open, then:"
 echo "  cd ${INSTALL_DIR}/desktop && npm start"
-echo "Debug log: ${INSTALL_DIR}/desktop/switchbot-debug.log"
+echo "Debug log: ${HOME}/.config/switchbot/switchbot-debug.log"

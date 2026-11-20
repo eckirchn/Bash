@@ -1,16 +1,18 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const expressApp = require('./server/app');
 const { autoUpdater } = require('electron-updater');
 
-const logFile = path.join(__dirname, 'switchbot-debug.log');
+const logFile = path.join(os.homedir(), '.config', 'switchbot', 'switchbot-debug.log');
 
 function log(step, extra) {
   const detail = extra === undefined ? '' : (typeof extra === 'string' ? extra : JSON.stringify(extra));
   const line = new Date().toISOString() + ' ' + step + (detail ? ' ' + detail : '');
   console.log(line);
   try {
+    fs.mkdirSync(path.dirname(logFile), { recursive: true });
     fs.appendFileSync(logFile, line + '\n');
   } catch (err) {
     console.error('Could not write debug log', err.message);
@@ -99,6 +101,18 @@ function createWindow() {
   });
   mainWindow.webContents.on('did-finish-load', () => {
     log('did-finish-load', mainWindow.webContents.getURL());
+    mainWindow.webContents.executeJavaScript(
+      "({href:location.href,hash:location.hash,rootLen:(document.getElementById('root')||{innerHTML:''}).innerHTML.length,scripts:[...document.scripts].map(s=>s.src),css:[...document.querySelectorAll('link[rel=stylesheet]')].map(l=>l.href)})"
+    ).then((info) => {
+      log('page', info);
+      if (!info.rootLen) {
+        const scripts = (info.scripts || []).join(' ');
+        log('page-empty', scripts || 'no scripts');
+        if (scripts.indexOf('/static/') !== -1 && scripts.indexOf('/client/build/static/') === -1) {
+          showLoadError('The page loaded, but its JavaScript is at /static, which a desktop window cannot open. Run SwitchBot_Update again.');
+        }
+      }
+    }).catch((err) => log('page-eval', err && err.message ? err.message : String(err)));
   });
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
     log('render-process-gone', details);
@@ -152,6 +166,9 @@ process.on('uncaughtException', (err) => {
 
 app.whenReady().then(() => {
   log('debug-log', logFile);
+  session.defaultSession.webRequest.onErrorOccurred((details) => {
+    log('resource-error', { url: details.url, error: details.error });
+  });
   createWindow();
   mainWindow.webContents.once('did-finish-load', () => {
     mainWindow.webContents.send('update-message', 'Checking for updates...');
