@@ -17,6 +17,8 @@ function log(step, extra) {
   }
 }
 
+// Linux: a frameless window plus Wayland leaves a grey window even with
+// --disable-gpu. Force software rendering, and X11 when this is a Wayland session.
 if (process.platform === 'linux') {
   app.disableHardwareAcceleration();
   app.commandLine.appendSwitch('disable-gpu');
@@ -77,6 +79,7 @@ function createWindow() {
   const iconPath = path.join(__dirname, 'client/build', 'switchbot.ico');
   if (fs.existsSync(iconPath)) options.icon = iconPath;
 
+  // titleBarOverlay on Linux draws the buttons and leaves the page blank.
   if (!linux) {
     options.frame = false;
     options.titleBarStyle = 'hidden';
