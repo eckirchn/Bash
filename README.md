@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 07 November 2026, 3:09 AM MDT
+Updated: 19 November 2026, 10:16 PM MST
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -51,6 +51,20 @@ ln -sf "$HOME/Bash/h264BlackFrameCompile" .
 
 After a `git pull` inside `$HOME/Bash` the linked names in `$HOME/bin` continue to point at the updated files. No re-copy needed.
 
+### Confirm `$HOME/bin` is in your `PATH`
+
+Many systems include `$HOME/bin` in the default `PATH`. Confirm it is present before relying on the short names from the links above:
+
+```bash
+case ":$PATH:" in
+  *":$HOME/bin:"*) echo "Yes, $HOME/bin is in PATH" ;;
+  *) echo "No. Add this line to ~/.bashrc (or ~/.profile), then open a new shell or run source ~/.bashrc:"
+     echo 'export PATH="$HOME/bin:$PATH"' ;;
+esac
+```
+
+If the check reports no, the symbolic links (or a direct checkout in `$HOME/bin`) will not be found by name alone until the directory is on the path.
+
 ## Later updates
 
 ```bash
@@ -58,7 +72,7 @@ cd "$HOME/Bash"
 git pull
 ```
 
-If you keep a checkout directly in `$HOME/bin` you can also use `gitBinUpdate`. It fetches the public HTTPS URL (no login) and replaces only the files that are in the repository. Extra local scripts are left alone.
+If you keep a checkout directly in `$HOME/bin` (instead of linking from a separate clone), use the `gitBinUpdate` script. It fetches the public HTTPS URL (no login) and replaces only the files that are in the repository. Extra local scripts are left alone. See [docs/gitBinUpdate.md](docs/gitBinUpdate.md).
 
 ## Examples
 

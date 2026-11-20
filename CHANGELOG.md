@@ -2,6 +2,12 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 19 November 2026, 10:16 PM MST
+
+Added documentation in README to confirm whether `$HOME/bin` is in `PATH` before relying on symbolic links (or a direct checkout) for short command names. Included a one-line shell test and the typical `export PATH="$HOME/bin:$PATH"` addition for `~/.bashrc` or `~/.profile`.
+
+Clarified the Later updates section: `gitBinUpdate` is the script to use when the checkout lives directly in `$HOME/bin`. It fetches over public HTTPS and updates only repository files, leaving local-only scripts alone.
+
 ## 07 November 2026, 3:09 AM MDT
 
 Added `BlackFrameCompile`. It requires `h264` or `h265` as the first argument and encodes one continuous range from the earliest start timestamp to the latest stop timestamp found in `lq_previews/`. It does not process individual clips and ignores gaps. Output is `MyClip.h264.mp4` or `MyClip.h265.mp4`. Existing compile scripts were left unchanged. Docs and README updated.
