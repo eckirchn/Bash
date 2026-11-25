@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 25 November 2026, 12:26 AM MST
+
+Added `ps/`, a PowerShell clone of each live bash script. The bash scripts are unchanged. Old copies under `archive/` were not cloned. `sshkeygen.ps1` stays at the repository root, and the same file is in `ps/`. The SwitchBot clones are the same Linux update and still call apt.
+
 ## 24 November 2026, 11:40 PM MST
 
 The three high-quality compile scripts now prefer NVIDIA NVENC when the machine can use it, and otherwise keep the software encode exactly as it was.

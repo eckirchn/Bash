@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 24 November 2026, 11:40 PM MST
+Updated: 25 November 2026, 12:26 AM MST
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -91,6 +91,21 @@ Detailed steps (preview folders, which clips to keep, compile options, etc.) are
 `blackframeextract` writes the low-quality previews with software `libx264` (`ultrafast`, CRF 26). Those stay on the CPU.
 
 `h264BlackFrameCompile`, `h265BlackFrameCompile`, and `BlackFrameCompile` prefer NVIDIA NVENC when this machine can actually open the encoder, and otherwise use the same `libx264` / `libx265` settings as before. The Xeon E5-2680 has no hardware encoder, so it always takes the software path. A Quadro P2000 (H.264 and HEVC Main10, unlimited sessions) takes the NVENC path, as does any other GPU whose ffmpeg lists `h264_nvenc` or `hevc_nvenc` and whose probe succeeds. See the three compile docs.
+
+## PowerShell
+
+`ps/` is a PowerShell clone of each live bash script. The bash scripts are unchanged. Old copies under `archive/` are not cloned.
+
+`sshkeygen.ps1` stays at the repository root. The same file is also in `ps/`.
+
+```powershell
+.\ps\blackframeextract.ps1 .\MyClip.mp4
+.\ps\h264BlackFrameCompile.ps1 .\MyClip
+.\ps\h265BlackFrameCompile.ps1 .\MyClip
+.\ps\BlackFrameCompile.ps1 h264 .\MyClip
+```
+
+`ps/SwitchBot_Update.ps1` and `ps/Switchbot_Update.ps1` are the same update as the bash scripts. They still call apt, git, npm, and curl.
 
 ## Scripts
 
