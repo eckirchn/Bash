@@ -1,6 +1,6 @@
 # h264BlackFrameCompile
 
-Updated: 24 November 2026, 11:40 PM MST
+Updated: 25 November 2026, 12:05 AM MST
 
 Builds one H.264 file from the low-quality previews that are still in the work folder. A deleted preview is a cut you do not want. Timestamps come from the filename, not from how long the preview plays.
 
@@ -18,6 +18,23 @@ The default directory is the current one. The source is `MyClip.mp4`, moved ther
 ```text
 MyClip.h264.mp4
 ```
+
+## Windows
+
+The bash script runs on the Xeon. It does not run in Windows PowerShell. The Dell OptiPlex (i7-4770, Quadro P2000) uses the companion, which applies the same encoder test and the same flags. `BlackFrameEncode.ps1` is loaded by that companion. Do not run it directly.
+
+```powershell
+.\h264BlackFrameCompile.ps1
+.\h264BlackFrameCompile.ps1 .\MyClip
+```
+
+`ffmpeg.exe` and `ffprobe.exe` must be on `PATH` (for example `%USERPROFILE%\bin`). `nvidia-smi` comes with the NVIDIA driver. If Windows blocks the script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\h264BlackFrameCompile.ps1 .\MyClip
+```
+
+The i7-4770 is 4 cores / 8 threads. The software flags are still `libx264` slow CRF 18, the same as the Xeon, and that path is slow on this CPU. This machine should take the Quadro P2000 path.
 
 ## Encoder choice
 
