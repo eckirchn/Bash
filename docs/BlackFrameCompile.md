@@ -1,6 +1,6 @@
 # BlackFrameCompile
 
-Updated: 25 November 2026, 12:05 AM MST
+Updated: 24 November 2026, 11:40 PM MST
 
 Encodes one continuous video from the earliest start timestamp to the latest stop timestamp found in the `lq_previews` folder. It does not process individual clips and does not respect gaps between clips.
 
@@ -21,23 +21,6 @@ Output, beside the source:
 MyClip.h264.mp4
 MyClip.h265.mp4
 ```
-
-## Windows
-
-The bash script runs on the Xeon. It does not run in Windows PowerShell. The Dell OptiPlex (i7-4770, Quadro P2000) uses the companion. `BlackFrameEncode.ps1` is loaded by that companion. Do not run it directly.
-
-```powershell
-.\BlackFrameCompile.ps1 h264
-.\BlackFrameCompile.ps1 h265 .\MyClip
-```
-
-`ffmpeg.exe` and `ffprobe.exe` must be on `PATH`. If Windows blocks the script:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\BlackFrameCompile.ps1 h264 .\MyClip
-```
-
-The first argument must still be exactly `h264` or `h265`. The software flags are the same as the Xeon. The i7-4770 should take the Quadro P2000 path.
 
 ## Encoder choice
 

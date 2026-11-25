@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 25 November 2026, 12:05 AM MST
+Updated: 24 November 2026, 11:40 PM MST
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -84,21 +84,13 @@ If you keep a checkout directly in `$HOME/bin` (instead of linking from a separa
 ./BlackFrameCompile h264 /path/to/MyClip
 ```
 
-On the Dell OptiPlex, from PowerShell, the companions are:
-
-```powershell
-.\h264BlackFrameCompile.ps1 .\MyClip
-.\h265BlackFrameCompile.ps1 .\MyClip
-.\BlackFrameCompile.ps1 h264 .\MyClip
-```
-
 Detailed steps (preview folders, which clips to keep, compile options, etc.) are in the individual files under `docs/`.
 
 ## Video compile
 
-`blackframeextract` writes the low-quality previews with software `libx264` (`ultrafast`, CRF 26). Those stay on the CPU. That script is bash, so the preview step stays on the Xeon.
+`blackframeextract` writes the low-quality previews with software `libx264` (`ultrafast`, CRF 26). Those stay on the CPU.
 
-`h264BlackFrameCompile`, `h265BlackFrameCompile`, and `BlackFrameCompile` prefer NVIDIA NVENC when this machine can actually open the encoder, and otherwise use the same `libx264` / `libx265` settings as before. The Xeon E5-2680 has no hardware encoder, so the bash scripts always take the software path. The Dell OptiPlex (Windows, i7-4770, Quadro P2000) cannot run those bash scripts. It runs the `.ps1` companions, which use the same test and the same flags. The P2000 encodes H.264 and HEVC Main10. See the three compile docs.
+`h264BlackFrameCompile`, `h265BlackFrameCompile`, and `BlackFrameCompile` prefer NVIDIA NVENC when this machine can actually open the encoder, and otherwise use the same `libx264` / `libx265` settings as before. The Xeon E5-2680 has no hardware encoder, so it always takes the software path. A Quadro P2000 (H.264 and HEVC Main10, unlimited sessions) takes the NVENC path, as does any other GPU whose ffmpeg lists `h264_nvenc` or `hevc_nvenc` and whose probe succeeds. See the three compile docs.
 
 ## Scripts
 
@@ -110,9 +102,5 @@ Detailed steps (preview folders, which clips to keep, compile options, etc.) are
 | `blackframeextract` | [docs/blackframeextract.md](docs/blackframeextract.md) |
 | `blackframeextract-batch` | [docs/blackframeextract-batch.md](docs/blackframeextract-batch.md) |
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) |
-| `h264BlackFrameCompile.ps1` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) (non-Bash, Windows) |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) |
-| `h265BlackFrameCompile.ps1` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) (non-Bash, Windows) |
 | `BlackFrameCompile` | [docs/BlackFrameCompile.md](docs/BlackFrameCompile.md) |
-| `BlackFrameCompile.ps1` | [docs/BlackFrameCompile.md](docs/BlackFrameCompile.md) (non-Bash, Windows) |
-| `BlackFrameEncode.ps1` | loaded by the three Windows companions, not run directly |

@@ -2,14 +2,6 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
-## 25 November 2026, 12:05 AM MST
-
-The three compile scripts now have Windows companions, so the same encode runs on the Xeon and on the Dell OptiPlex.
-
-The Xeon E5-2680 stays on the bash scripts. Those need Linux (`/proc/stat` and `bc`) and keep the software path, because that machine has no GPU. The OptiPlex is Windows PowerShell, an i7-4770 (4 cores / 8 threads) plus a Quadro P2000 (driver 32.0.15.7159). It cannot run the bash scripts. `h264BlackFrameCompile.ps1`, `h265BlackFrameCompile.ps1`, and `BlackFrameCompile.ps1` are the companions. They load `BlackFrameEncode.ps1`. Same detection as the bash scripts: `ffmpeg -encoders`, `nvidia-smi -L` when that command exists, then a one-frame probe of preset `p7` (then `hq`). Same NVENC flags, including HEVC Main10 `p010le`. Same `libx264` / `libx265` flags when the probe does not open. CPU wait is under 80% for 10 seconds, read from the Windows processor counter. One encode at a time.
-
-`blackframeextract` is unchanged and still bash, so the preview step stays on the Xeon. These `.ps1` files are non-Bash, same as `sshkeygen.ps1`. The bash compile scripts were not edited.
-
 ## 24 November 2026, 11:40 PM MST
 
 The three high-quality compile scripts now prefer NVIDIA NVENC when the machine can use it, and otherwise keep the software encode exactly as it was.
