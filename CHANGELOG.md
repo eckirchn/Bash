@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 25 November 2026, 12:41 AM MST
+
+Renamed `BlackFrameCompileh265Batch` to `BlackFrameCompileBatch-h265`. Same behavior.
+
 ## 25 November 2026, 12:35 AM MST
 
 Added `BlackFrameCompileh265Batch`. From the directory it is run in, it enters each subdirectory and runs `BlackFrameCompile h265`. One folder at a time. A failed folder is reported and the rest still run. The argument is `h265`, because `BlackFrameCompile` rejects `265`.

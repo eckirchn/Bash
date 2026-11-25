@@ -1,11 +1,11 @@
 #!/bin/bash
-# Updated: 25 November 2026, 12:35 AM MST
-# BlackFrameCompileh265Batch
+# Updated: 25 November 2026, 12:41 AM MST
+# BlackFrameCompileBatch-h265
 # From the directory you run this in, enter each subdirectory and run
 # BlackFrameCompile h265. One folder at a time. A failure is reported
 # and the next folder still runs.
 #
-#   BlackFrameCompileh265Batch
+#   BlackFrameCompileBatch-h265
 #
 # BlackFrameCompile requires the argument h265, not 265.
 

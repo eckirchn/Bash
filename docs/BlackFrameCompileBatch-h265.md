@@ -1,12 +1,12 @@
-# BlackFrameCompileh265Batch
+# BlackFrameCompileBatch-h265
 
-Updated: 25 November 2026, 12:35 AM MST
+Updated: 25 November 2026, 12:41 AM MST
 
 Runs [BlackFrameCompile](BlackFrameCompile.md) with `h265` in every subdirectory of the current directory. One folder at a time. The argument is `h265`. `265` is rejected by `BlackFrameCompile`.
 
 ```bash
 cd /path/to/MyClips
-BlackFrameCompileh265Batch
+BlackFrameCompileBatch-h265
 ```
 
 `MyClips/` is a folder of work folders, each one made by [blackframeextract](blackframeextract.md):

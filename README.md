@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 25 November 2026, 12:35 AM MST
+Updated: 25 November 2026, 12:41 AM MST
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -94,7 +94,7 @@ Detailed steps (preview folders, which clips to keep, compile options, etc.) are
 
 ## PowerShell
 
-`ps/` is a PowerShell clone of the bash scripts that were already in the repository. Old copies under `archive/` are not cloned. `BlackFrameCompileh265Batch` is bash only.
+`ps/` is a PowerShell clone of the bash scripts that were already in the repository. Old copies under `archive/` are not cloned. `BlackFrameCompileBatch-h265` is bash only.
 
 `sshkeygen.ps1` stays at the repository root. The same file is also in `ps/`.
 
@@ -119,4 +119,4 @@ Detailed steps (preview folders, which clips to keep, compile options, etc.) are
 | `h264BlackFrameCompile` | [docs/h264BlackFrameCompile.md](docs/h264BlackFrameCompile.md) |
 | `h265BlackFrameCompile` | [docs/h265BlackFrameCompile.md](docs/h265BlackFrameCompile.md) |
 | `BlackFrameCompile` | [docs/BlackFrameCompile.md](docs/BlackFrameCompile.md) |
-| `BlackFrameCompileh265Batch` | [docs/BlackFrameCompileh265Batch.md](docs/BlackFrameCompileh265Batch.md) |
+| `BlackFrameCompileBatch-h265` | [docs/BlackFrameCompileBatch-h265.md](docs/BlackFrameCompileBatch-h265.md) |
