@@ -2,6 +2,10 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 25 November 2026, 12:35 AM MST
+
+Added `BlackFrameCompileh265Batch`. From the directory it is run in, it enters each subdirectory and runs `BlackFrameCompile h265`. One folder at a time. A failed folder is reported and the rest still run. The argument is `h265`, because `BlackFrameCompile` rejects `265`.
+
 ## 25 November 2026, 12:26 AM MST
 
 Added `ps/`, a PowerShell clone of each live bash script. The bash scripts are unchanged. Old copies under `archive/` were not cloned. `sshkeygen.ps1` stays at the repository root, and the same file is in `ps/`. The SwitchBot clones are the same Linux update and still call apt.
