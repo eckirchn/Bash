@@ -2,6 +2,20 @@
 
 Times are Mountain Time. Each entry is one revision on `main`.
 
+## 24 November 2026, 11:40 PM MST
+
+The three high-quality compile scripts now prefer NVIDIA NVENC when the machine can use it, and otherwise keep the software encode exactly as it was.
+
+`h264BlackFrameCompile`, `h265BlackFrameCompile`, and `BlackFrameCompile` decide once at startup. `ffmpeg -encoders` must list `h264_nvenc` or `hevc_nvenc`. If `nvidia-smi` is installed, `nvidia-smi -L` must see a GPU. A one-frame probe then has to open the encoder. The Xeon E5-2680 ffmpeg build lists NVENC even though that CPU has no encoder, so the list alone is not treated as a GPU. When the probe fails, or no GPU answers, the software flags are the previous ones: `libx264` preset `slow`, `tune film`, CRF 18, high profile, 8-bit; `libx265` preset `medium`, CRF 20, 10-bit `main10`, SAO off, `aq-mode=3`, `hvc1`. No extra warning is printed in that case, so a normal Xeon run looks the same.
+
+When the probe opens, H.264 uses `h264_nvenc -preset p7 -tune hq -rc vbr -cq 18 -b:v 0 -profile:v high -pix_fmt yuv420p -spatial-aq 1 -temporal-aq 1 -rc-lookahead 32 -bf 3`. H.265 uses `hevc_nvenc` with the same shape at `-cq 20`, `-profile:v main10`, `-pix_fmt p010le`, and `-tag:v hvc1`. Preset `hq` is tried only if `p7` is rejected. `p010le` is NVENC's 10-bit 4:2:0. Spatial and temporal AQ stand in for x265 `aq-mode=3`. Lookahead is 32 because that is the NVENC cap. B-frames are 3 because Pascal accepts that. x265 SAO, psy-rd, psy-rdoq, deblock, and `ref=4` have no NVENC switch and stay on the software path only.
+
+CUDA decode (`-hwaccel cuda -hwaccel_output_format cuda`) is used only when the source codec is one Pascal NVDEC can open: H.264, HEVC, MPEG-2, MPEG-4, VC-1, VP8, VP9. AV1 and anything else stay on software decode. If CUDA decode fails, that clip is retried with software decode and NVENC. If NVENC itself fails, that clip and the rest fall back to `libx264` or `libx265`. Still one encode at a time.
+
+`blackframeextract` previews are unchanged (`libx264`, `ultrafast`, CRF 26).
+
+Previous scripts archived as `archive/h264BlackFrameCompile-20261124`, `archive/h265BlackFrameCompile-20261124`, and `archive/BlackFrameCompile-20261124`. `BlackFrameCompile` is now mode `100755`, like the other two compile scripts, so a hard reset keeps the executable bit. Docs and README updated.
+
 ## 19 November 2026, 10:16 PM MST
 
 Added documentation in README to confirm whether `$HOME/bin` is in `PATH` before relying on symbolic links (or a direct checkout) for short command names. Included a one-line shell test and the typical `export PATH="$HOME/bin:$PATH"` addition for `~/.bashrc` or `~/.profile`.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Updated: 07 November 2026, 2:42 AM MDT
+# Updated: 24 November 2026, 11:40 PM MST
 # h265BlackFrameCompile
 # After reviewing lq_previews, delete the clips you do not want.
 # This script encodes whatever is still there, in clip order, into one HEVC file.
@@ -14,6 +14,20 @@
 #
 # Output sits next to the source:
 #   <name>.h265.mp4
+#
+# Encoder choice, decided once at startup:
+#   NVIDIA NVENC when ffmpeg lists hevc_nvenc, a GPU answers, and a one-frame
+#   probe opens the encoder. nvidia-smi is required to succeed when that
+#   command is installed. Quadro P2000 (Pascal) can encode HEVC Main10.
+#   Preset p7, tune hq, vbr, cq 20, main10, p010le, hvc1. If p7 is rejected,
+#   preset hq is tried. Spatial and temporal AQ stand in for x265 aq-mode.
+#   Lookahead is 32 (the NVENC cap). 3 B-frames, which Pascal accepts.
+#   x265 SAO, psy-rd, psy-rdoq, deblock, and ref have no NVENC equivalent.
+#   CUDA decode (-hwaccel cuda -hwaccel_output_format cuda) when NVDEC can
+#   open the source codec. A failed hardware decode retries that clip with
+#   software decode and NVENC. A failed NVENC encode falls back to libx265
+#   for that clip and the rest.
+#   Otherwise the software settings are used unchanged.
 #
 # E5-2680 (Sandy Bridge, 8c/16t, no hardware encoder). One encode at a time
 # so x265 can use every thread.
@@ -71,6 +85,91 @@ fnWaitForCpu() {
         "$IGreen" "$limit" "$need" "$ColorReset"
 }
 
+fnEncoderListed() {
+    local enc="$1"
+    local list
+    list=$(ffmpeg -hide_banner -encoders 2>/dev/null || true)
+    grep -Eq "[[:space:]]${enc}[[:space:]]" <<<"$list"
+}
+
+fnProbe() {
+    ffmpeg -nostdin -hide_banner -loglevel error \
+        -f lavfi -i color=c=black:s=256x256:r=24:d=0.05 \
+        "$@" -frames:v 1 -f null - >/dev/null 2>&1
+}
+
+fnSourceCodec() {
+    local codec
+    codec=$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+        -of csv=p=0 "$SOURCE" 2>/dev/null | head -1 || true)
+    codec=${codec//$'\r'/}
+    printf '%s\n' "$codec"
+}
+
+# Pascal NVDEC (Quadro P2000 included): H.264, HEVC, MPEG-2, MPEG-4, VC-1, VP8, VP9.
+fnNvdecOk() {
+    case "$1" in
+        h264|hevc|mpeg2video|mpeg4|vc1|vp8|vp9) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+fnTryEncode() {
+    local outfile="$1"
+    local mode="$2"
+    shift 2
+    if [[ "$mode" == hw ]]; then
+        ffmpeg -nostdin -hide_banner -stats -loglevel error \
+            -hwaccel cuda -hwaccel_output_format cuda \
+            "$@" \
+            -threads 0 \
+            -map 0:v:0 -map 0:a? \
+            "${VCODEC[@]}" \
+            -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
+            -c:a copy \
+            -avoid_negative_ts make_zero \
+            -movflags +faststart \
+            -y "$outfile"
+    else
+        ffmpeg -nostdin -hide_banner -stats -loglevel error \
+            "$@" \
+            -threads 0 \
+            -map 0:v:0 -map 0:a? \
+            "${VCODEC[@]}" \
+            -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
+            -c:a copy \
+            -avoid_negative_ts make_zero \
+            -movflags +faststart \
+            -y "$outfile"
+    fi
+}
+
+fnRunEncode() {
+    local outfile="$1"
+    shift
+    if (( USE_HWACCEL )); then
+        if fnTryEncode "$outfile" hw "$@"; then
+            return 0
+        fi
+        echo -e "${IYellow}Hardware decode failed on $(basename "$outfile"). Retrying with software decode.${ColorReset}" >&2
+        USE_HWACCEL=0
+        if fnTryEncode "$outfile" sw "$@"; then
+            return 0
+        fi
+    elif fnTryEncode "$outfile" sw "$@"; then
+        return 0
+    fi
+    if (( USE_NVENC )); then
+        echo -e "${IYellow}NVENC failed on $(basename "$outfile"). Falling back to software for this clip and the rest.${ColorReset}" >&2
+        USE_NVENC=0
+        VCODEC=("${VCODEC_SW[@]}")
+        if fnTryEncode "$outfile" sw "$@"; then
+            return 0
+        fi
+    fi
+    fnDie "encode failed: $outfile"
+}
+
 for cmd in ffmpeg ffprobe bc; do
     command -v "$cmd" >/dev/null 2>&1 || fnDie "missing: $cmd"
 done
@@ -113,20 +212,83 @@ SOURCE=$(fnFindSource "$WORKDIR")
 STEM=$(basename "$SOURCE")
 STEM=${STEM%.*}
 
-CRF=20
-PRESET=medium
-LABEL="x265 main10 ${PRESET} CRF ${CRF}"
-OUTPUT="$WORKDIR/${STEM}.h265.mp4"
-SEGDIR="$WORKDIR/hq_segments_h265"
-VCODEC=(
+# Software flags are the previous behavior. Do not retune them.
+VCODEC_SW=(
     -c:v libx265
-    -preset "$PRESET"
-    -crf "$CRF"
+    -preset medium
+    -crf 20
     -pix_fmt yuv420p10le
     -profile:v main10
     -tag:v hvc1
     -x265-params "aq-mode=3:qg-size=32:psy-rd=2.0:psy-rdoq=1.0:rdoq-level=2:deblock=-1,-1:sao=0:strong-intra-smoothing=0:bframes=6:rc-lookahead=40:ref=4"
 )
+H265_NV_P7=(
+    -c:v hevc_nvenc
+    -preset p7
+    -tune hq
+    -rc vbr
+    -cq 20
+    -b:v 0
+    -profile:v main10
+    -pix_fmt p010le
+    -tag:v hvc1
+    -spatial-aq 1
+    -temporal-aq 1
+    -rc-lookahead 32
+    -bf 3
+)
+H265_NV_HQ=(
+    -c:v hevc_nvenc
+    -preset hq
+    -tune hq
+    -rc vbr
+    -cq 20
+    -b:v 0
+    -profile:v main10
+    -pix_fmt p010le
+    -tag:v hvc1
+    -spatial-aq 1
+    -temporal-aq 1
+    -rc-lookahead 32
+    -bf 3
+)
+
+USE_NVENC=0
+USE_HWACCEL=0
+LABEL="x265 main10 medium CRF 20"
+VCODEC=("${VCODEC_SW[@]}")
+
+# Silent software path when nothing answers. A warning is printed only when a
+# GPU is visible but the preset or the probe still fails.
+GPU_SEEN=0
+if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+    GPU_SEEN=1
+fi
+
+if fnEncoderListed hevc_nvenc && { [[ "$GPU_SEEN" -eq 1 ]] || ! command -v nvidia-smi >/dev/null 2>&1; }; then
+    if fnProbe "${H265_NV_P7[@]}"; then
+        USE_NVENC=1
+        VCODEC=("${H265_NV_P7[@]}")
+        LABEL="NVENC hevc_nvenc p7 tune hq vbr cq 20 main10"
+    elif fnProbe "${H265_NV_HQ[@]}"; then
+        USE_NVENC=1
+        VCODEC=("${H265_NV_HQ[@]}")
+        LABEL="NVENC hevc_nvenc hq tune hq vbr cq 20 main10"
+        echo -e "${IYellow}NVENC preset p7 was rejected. Using preset hq.${ColorReset}" >&2
+    elif [[ "$GPU_SEEN" -eq 1 ]]; then
+        echo -e "${IYellow}NVENC probe failed. Using libx265.${ColorReset}" >&2
+    fi
+fi
+
+if (( USE_NVENC )) && fnNvdecOk "$(fnSourceCodec)"; then
+    USE_HWACCEL=1
+    LABEL="$LABEL, CUDA decode"
+elif (( USE_NVENC )); then
+    LABEL="$LABEL, software decode"
+fi
+
+OUTPUT="$WORKDIR/${STEM}.h265.mp4"
+SEGDIR="$WORKDIR/hq_segments_h265"
 
 ROWS_FILE=$(mktemp)
 trap 'rm -f "$ROWS_FILE"' EXIT
@@ -182,16 +344,7 @@ for row in "${ROWS[@]}"; do
     fi
     seg="$SEGDIR/HQ_Clip${idpad}.mp4"
     echo -e "${IGreen}HQ Clip $idpad${ColorReset}  ${start}–${stop} (${len}s)"
-    ffmpeg -nostdin -hide_banner -stats -loglevel error \
-        -ss "$prestart" -i "$SOURCE" -ss "$acc" -t "$len" \
-        -threads 0 \
-        -map 0:v:0 -map 0:a? \
-        "${VCODEC[@]}" \
-        -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
-        -c:a copy \
-        -avoid_negative_ts make_zero \
-        -movflags +faststart \
-        -y "$seg"
+    fnRunEncode "$seg" -ss "$prestart" -i "$SOURCE" -ss "$acc" -t "$len"
     escaped=${seg//\'/\'\\\'\'}
     printf "file '%s'\n" "$escaped" >> "$LIST"
 done

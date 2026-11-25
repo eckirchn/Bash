@@ -1,6 +1,6 @@
 # Bash scripts
 
-Updated: 19 November 2026, 10:16 PM MST
+Updated: 24 November 2026, 11:40 PM MST
 
 Personal Linux Bash scripts. This repository is public. History is in [CHANGELOG.md](CHANGELOG.md).
 
@@ -79,9 +79,18 @@ If you keep a checkout directly in `$HOME/bin` (instead of linking from a separa
 ```bash
 ./sshkeygen myserver
 ./blackframeextract MyClip.mp4
+./h264BlackFrameCompile /path/to/MyClip
+./h265BlackFrameCompile /path/to/MyClip
+./BlackFrameCompile h264 /path/to/MyClip
 ```
 
 Detailed steps (preview folders, which clips to keep, compile options, etc.) are in the individual files under `docs/`.
+
+## Video compile
+
+`blackframeextract` writes the low-quality previews with software `libx264` (`ultrafast`, CRF 26). Those stay on the CPU.
+
+`h264BlackFrameCompile`, `h265BlackFrameCompile`, and `BlackFrameCompile` prefer NVIDIA NVENC when this machine can actually open the encoder, and otherwise use the same `libx264` / `libx265` settings as before. The Xeon E5-2680 has no hardware encoder, so it always takes the software path. A Quadro P2000 (H.264 and HEVC Main10, unlimited sessions) takes the NVENC path, as does any other GPU whose ffmpeg lists `h264_nvenc` or `hevc_nvenc` and whose probe succeeds. See the three compile docs.
 
 ## Scripts
 

@@ -1,0 +1,199 @@
+#!/bin/bash
+# Updated: 07 November 2026, 3:09 AM MDT
+# BlackFrameCompile
+# Encode one continuous video from the earliest start timestamp to the latest
+# stop timestamp found in lq_previews. Requires h264 or h265 as the first
+# argument. Does not process individual clips or respect gaps.
+#
+#   BlackFrameCompile h264 [work-directory]
+#   BlackFrameCompile h265 [work-directory]
+#
+# work-directory is the folder blackframeextract made (MyClip/),
+# or an older MyClip_work folder. Default is the current directory.
+#
+# Output sits next to the source:
+#   <name>.h264.mp4
+#   <name>.h265.mp4
+#
+# E5-2680 (Sandy Bridge, 8c/16t, no hardware encoder). One encode.
+#
+# x264: preset slow, tune film, CRF 18, high profile, 8-bit.
+# x265: preset medium, CRF 20, main10, SAO off, aq-mode 3.
+
+set -euo pipefail
+
+ColorReset='\033[0m'
+IWhite='\033[0;97m'
+IYellow='\033[0;93m'
+ICyan='\033[0;96m'
+IGreen='\033[0;92m'
+IRed='\033[0;91m'
+
+fnDie() {
+    echo -e "${IRed}$*${ColorReset}" >&2
+    exit 1
+}
+
+if [[ $# -lt 1 ]]; then
+    fnDie "Usage: $0 h264|h265 [work-directory]"
+fi
+
+CODEC="$1"
+shift
+case "$CODEC" in
+    h264|h265) ;;
+    *) fnDie "First argument must be h264 or h265 (got: $CODEC)" ;;
+esac
+
+# Aggregate CPU from /proc/stat. Idle includes iowait. Returns "idle total".
+fnCpuSample() {
+    awk '/^cpu / { print $5+$6, $2+$3+$4+$5+$6+$7+$8+$9 }' /proc/stat
+}
+
+fnWaitForCpu() {
+    local limit=80
+    local need=10
+    local idle total prev_idle prev_total didle dtotal pct under=0
+    read -r prev_idle prev_total < <(fnCpuSample)
+    echo -e "${IYellow}Waiting until CPU stays under ${limit}% for ${need} seconds.${ColorReset}"
+    while (( under < need )); do
+        sleep 1
+        read -r idle total < <(fnCpuSample)
+        didle=$((idle - prev_idle))
+        dtotal=$((total - prev_total))
+        prev_idle=$idle
+        prev_total=$total
+        if (( dtotal > 0 )); then
+            pct=$(( (dtotal - didle) * 100 / dtotal ))
+        else
+            pct=0
+        fi
+        if (( pct < limit )); then
+            under=$((under + 1))
+        else
+            under=0
+        fi
+        printf '\r%sCPU %3d%% — under %d%% for %d of %d seconds%s   ' \
+            "$IYellow" "$pct" "$limit" "$under" "$need" "$ColorReset"
+    done
+    printf '\r%sCPU stayed under %d%% for %d seconds. Starting.%s\n' \
+        "$IGreen" "$limit" "$need" "$ColorReset"
+}
+
+for cmd in ffmpeg ffprobe bc; do
+    command -v "$cmd" >/dev/null 2>&1 || fnDie "missing: $cmd"
+done
+
+WORKDIR=$(readlink -f "${1:-.}")
+LQDIR="$WORKDIR/lq_previews"
+[[ -d "$LQDIR" ]] || fnDie "No lq_previews in $WORKDIR"
+
+fnFindSource() {
+    local dir="$1"
+    local stem ext f base
+    stem=$(basename "$dir")
+    stem=${stem%_work}
+    for ext in mp4 mkv m4v mov ts avi mpg mpeg; do
+        f="$dir/$stem.$ext"
+        if [[ -f "$f" ]]; then
+            printf '%s\n' "$f"
+            return 0
+        fi
+    done
+    local -a found=()
+    shopt -s nullglob
+    for f in "$dir"/*.{mp4,mkv,m4v,mov,ts,avi,mpg,mpeg}; do
+        base=$(basename "$f")
+        [[ "$base" == *.clean.* || "$base" == *.h264.mp4 || "$base" == *.h265.mp4 ]] && continue
+        found+=("$f")
+    done
+    shopt -u nullglob
+    if (( ${#found[@]} == 1 )); then
+        printf '%s\n' "${found[0]}"
+        return 0
+    fi
+    if (( ${#found[@]} == 0 )); then
+        fnDie "No source video in $dir"
+    fi
+    fnDie "More than one source video in $dir; use a folder named after the source"
+}
+
+SOURCE=$(fnFindSource "$WORKDIR")
+STEM=$(basename "$SOURCE")
+STEM=${STEM%.*}
+
+if [[ "$CODEC" == h265 ]]; then
+    CRF=20
+    PRESET=medium
+    LABEL="x265 main10 ${PRESET} CRF ${CRF}"
+    OUTPUT="$WORKDIR/${STEM}.h265.mp4"
+    VCODEC=(
+        -c:v libx265
+        -preset "$PRESET"
+        -crf "$CRF"
+        -pix_fmt yuv420p10le
+        -profile:v main10
+        -tag:v hvc1
+        -x265-params "aq-mode=3:qg-size=32:psy-rd=2.0:psy-rdoq=1.0:rdoq-level=2:deblock=-1,-1:sao=0:strong-intra-smoothing=0:bframes=6:rc-lookahead=40:ref=4"
+    )
+else
+    CRF=18
+    PRESET=slow
+    LABEL="x264 ${PRESET} tune film CRF ${CRF}"
+    OUTPUT="$WORKDIR/${STEM}.h264.mp4"
+    VCODEC=(
+        -c:v libx264
+        -preset "$PRESET"
+        -tune film
+        -crf "$CRF"
+        -profile:v high
+        -pix_fmt yuv420p
+    )
+fi
+
+# Collect min start and max stop from all LQ clip filenames
+min_start=""
+max_stop=""
+shopt -s nullglob
+for f in "$LQDIR"/LQ_Clip*.mp4; do
+    base=$(basename "$f" .mp4)
+    if [[ "$base" =~ ^LQ_Clip([0-9]+)_([0-9]+\.[0-9]+)-([0-9]+\.[0-9]+)$ ]]; then
+        start="${BASH_REMATCH[2]}"
+        stop="${BASH_REMATCH[3]}"
+        if [[ -z "$min_start" ]] || (( $(bc -l <<< "$start < $min_start") )); then
+            min_start="$start"
+        fi
+        if [[ -z "$max_stop" ]] || (( $(bc -l <<< "$stop > $max_stop") )); then
+            max_stop="$stop"
+        fi
+    else
+        echo -e "${IYellow}skip (bad name): $(basename "$f")${ColorReset}" >&2
+    fi
+done
+shopt -u nullglob
+
+if [[ -z "$min_start" || -z "$max_stop" ]]; then
+    fnDie "No valid LQ clips found in $LQDIR"
+fi
+
+len=$(bc -l <<< "$max_stop - $min_start")
+
+echo -e "${IWhite}Source:${ColorReset}  $SOURCE"
+echo -e "${IWhite}Output:${ColorReset}  $OUTPUT"
+echo -e "${IWhite}Range:${ColorReset}   $min_start -> $max_stop  (${len}s), ${LABEL}"
+
+fnWaitForCpu
+
+echo -e "${IGreen}Encoding continuous range${ColorReset}  ${min_start}–${max_stop} (${len}s)"
+ffmpeg -nostdin -hide_banner -stats -loglevel error \
+    -ss "$min_start" -i "$SOURCE" -t "$len" \
+    -threads 0 \
+    -map 0:v:0 -map 0:a? \
+    "${VCODEC[@]}" \
+    -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
+    -c:a copy \
+    -avoid_negative_ts make_zero \
+    -movflags +faststart \
+    -y "$OUTPUT"
+
+echo -e "${IGreen}Done:${ColorReset} $OUTPUT"
